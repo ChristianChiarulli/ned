@@ -33,6 +33,7 @@ const theme: EditorThemeClasses = {
     code: 'bg-zinc-100 dark:bg-zinc-800 rounded px-1 py-0.5 font-mono text-sm',
   },
   code: 'bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4 font-mono text-sm block mb-2 overflow-x-auto',
+  image: 'inline-block my-2',
 };
 
 export default theme;

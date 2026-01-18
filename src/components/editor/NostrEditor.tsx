@@ -29,6 +29,9 @@ import ScrollCenterCurrentLinePlugin from './plugins/ScrollCenterCurrentLinePlug
 import ListBackspacePlugin from './plugins/ListBackspacePlugin';
 import CodeBlockShortcutPlugin from './plugins/CodeBlockShortcutPlugin';
 import InitialContentPlugin from './plugins/InitialContentPlugin';
+import ImagePastePlugin from './plugins/ImagePastePlugin';
+import { ImageNode } from './nodes/ImageNode';
+import { IMAGE } from './transformers/ImageTransformer';
 
 interface NostrEditorProps {
   placeholder?: string;
@@ -49,6 +52,7 @@ export default function NostrEditor({
         name: 'NostrEditor',
         namespace: 'NostrEditor',
         theme,
+        nodes: [ImageNode],
         onError: (error: Error) => console.error('Lexical error:', error),
         dependencies: [
           RichTextExtension,
@@ -86,11 +90,12 @@ export default function NostrEditor({
             />
           )}
           <ClickOutsidePlugin />
+          <ImagePastePlugin />
           {initialMarkdown && <InitialContentPlugin markdown={initialMarkdown} />}
           <ScrollCenterCurrentLinePlugin />
           <ListBackspacePlugin />
           <CodeBlockShortcutPlugin />
-          <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
+          <MarkdownShortcutPlugin transformers={[IMAGE, ...TRANSFORMERS]} />
         </div>
       </div>
     </LexicalExtensionComposer>

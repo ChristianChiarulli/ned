@@ -5,7 +5,9 @@ import {
   $getRoot,
   $setSelection,
   $createRangeSelection,
+  $createNodeSelection,
   $isElementNode,
+  $isDecoratorNode,
   $isTextNode,
   $isLineBreakNode,
   $getNodeFromDOMNode,
@@ -70,7 +72,7 @@ export default function ClickOutsidePlugin() {
         let currentElement: Element | null = elementAtPoint;
         while (currentElement && currentElement !== editorElement) {
           const node = $getNodeFromDOMNode(currentElement);
-          if (node && $isElementNode(node)) {
+          if (node && ($isElementNode(node) || $isDecoratorNode(node))) {
             targetNode = node;
             targetDomElement = currentElement as HTMLElement;
             break;
@@ -209,6 +211,13 @@ export default function ClickOutsidePlugin() {
               selection.focus.set(targetNode.getKey(), 0, 'element');
             }
           }
+        } else if ($isDecoratorNode(targetNode)) {
+          // For decorator nodes (like images), select the node itself
+          const nodeSelection = $createNodeSelection();
+          nodeSelection.add(targetNode.getKey());
+          $setSelection(nodeSelection);
+          editorElement.focus({ preventScroll: true });
+          return;
         } else if ($isElementNode(targetNode)) {
           if (isLeftSide) {
             const firstChild = targetNode.getFirstChild();

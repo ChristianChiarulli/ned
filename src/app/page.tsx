@@ -42,6 +42,10 @@ function greet(name) {
 > This is a blockquote.
 > It can span multiple lines.
 
+## Images
+
+![Saturn](https://cdn.mos.cms.futurecdn.net/BwL2586BtvBPywasXXtzwA-1000-80.jpeg.webp)
+
 ---
 
 That's a horizontal rule above. Happy writing!
