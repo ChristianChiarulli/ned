@@ -33,13 +33,16 @@ import CodeBlockShortcutPlugin from './plugins/CodeBlockShortcutPlugin';
 import InitialContentPlugin from './plugins/InitialContentPlugin';
 import ImagePastePlugin from './plugins/ImagePastePlugin';
 import LinkPastePlugin from './plugins/LinkPastePlugin';
-import NpubPastePlugin from './plugins/NpubPastePlugin';
+import NostrPastePlugin from './plugins/NostrPastePlugin';
 import { ImageNode } from './nodes/ImageNode';
 import { LinkNode } from './nodes/LinkNode';
 import { NpubNode } from './nodes/NpubNode';
+import { NprofileNode } from './nodes/NprofileNode';
+import { NeventNode } from './nodes/NeventNode';
+import { NaddrNode } from './nodes/NaddrNode';
 import { IMAGE } from './transformers/ImageTransformer';
 import { LINK } from './transformers/LinkTransformer';
-import { NPUB } from './transformers/NpubTransformer';
+import { NOSTR_TRANSFORMERS } from './transformers/NostrTransformers';
 
 interface NostrEditorProps {
   placeholder?: string;
@@ -60,7 +63,7 @@ export default function NostrEditor({
         name: 'NostrEditor',
         namespace: 'NostrEditor',
         theme,
-        nodes: [ImageNode, LinkNode, NpubNode],
+        nodes: [ImageNode, LinkNode, NpubNode, NprofileNode, NeventNode, NaddrNode],
         onError: (error: Error) => console.error('Lexical error:', error),
         dependencies: [
           RichTextExtension,
@@ -98,7 +101,7 @@ export default function NostrEditor({
           <ClickOutsidePlugin />
           <ImagePastePlugin />
           <LinkPastePlugin />
-          <NpubPastePlugin />
+          <NostrPastePlugin />
           {initialMarkdown && <InitialContentPlugin markdown={initialMarkdown} />}
           <ScrollCenterCurrentLinePlugin />
           <ListBackspacePlugin />
@@ -107,7 +110,7 @@ export default function NostrEditor({
             transformers={[
               IMAGE,
               LINK,
-              NPUB,
+              ...NOSTR_TRANSFORMERS,
               ...ELEMENT_TRANSFORMERS,
               ...MULTILINE_ELEMENT_TRANSFORMERS,
               ...TEXT_FORMAT_TRANSFORMERS,

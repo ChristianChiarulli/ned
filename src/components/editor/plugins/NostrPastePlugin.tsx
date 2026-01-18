@@ -7,13 +7,36 @@ import {
   $isRangeSelection,
   COMMAND_PRIORITY_HIGH,
   PASTE_COMMAND,
+  type LexicalNode,
 } from 'lexical';
 import { $createNpubNode } from '../nodes/NpubNode';
+import { $createNprofileNode } from '../nodes/NprofileNode';
+import { $createNeventNode } from '../nodes/NeventNode';
+import { $createNaddrNode } from '../nodes/NaddrNode';
 
-// Nostr public key format: npub1 followed by 58 bech32 characters
+// Nostr bech32 entity patterns
 const NPUB_REGEX = /^npub1[a-z0-9]{58}$/i;
+const NPROFILE_REGEX = /^nprofile1[a-z0-9]+$/i;
+const NEVENT_REGEX = /^nevent1[a-z0-9]+$/i;
+const NADDR_REGEX = /^naddr1[a-z0-9]+$/i;
 
-export default function NpubPastePlugin() {
+function createNostrNode(text: string): LexicalNode | null {
+  if (NPUB_REGEX.test(text)) {
+    return $createNpubNode({ npub: text });
+  }
+  if (NPROFILE_REGEX.test(text)) {
+    return $createNprofileNode({ nprofile: text });
+  }
+  if (NEVENT_REGEX.test(text)) {
+    return $createNeventNode({ nevent: text });
+  }
+  if (NADDR_REGEX.test(text)) {
+    return $createNaddrNode({ naddr: text });
+  }
+  return null;
+}
+
+export default function NostrPastePlugin() {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -25,8 +48,9 @@ export default function NpubPastePlugin() {
 
         const text = clipboardData.getData('text/plain').trim();
 
-        // Check if the pasted text is a valid npub
-        if (!NPUB_REGEX.test(text)) {
+        // Try to create a Nostr node from the pasted text
+        const node = createNostrNode(text);
+        if (!node) {
           return false;
         }
 
@@ -37,9 +61,7 @@ export default function NpubPastePlugin() {
           const selection = $getSelection();
           if (!$isRangeSelection(selection)) return;
 
-          // Create and insert the npub node
-          const npubNode = $createNpubNode({ npub: text });
-          selection.insertNodes([npubNode]);
+          selection.insertNodes([node]);
         });
 
         return true;
