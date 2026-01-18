@@ -46,6 +46,10 @@ function greet(name) {
 
 ![Saturn](https://cdn.mos.cms.futurecdn.net/BwL2586BtvBPywasXXtzwA-1000-80.jpeg.webp)
 
+## Links
+
+Check out the [installation guide](https://authjs.dev/getting-started/installation?framework=next.js) for Auth.js.
+
 ---
 
 That's a horizontal rule above. Happy writing!

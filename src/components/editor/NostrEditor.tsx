@@ -6,15 +6,18 @@ import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin';
-import { TRANSFORMERS } from '@lexical/markdown';
-import { defineExtension, configExtension } from 'lexical';
+import {
+  ELEMENT_TRANSFORMERS,
+  MULTILINE_ELEMENT_TRANSFORMERS,
+  TEXT_FORMAT_TRANSFORMERS,
+} from '@lexical/markdown';
+import { defineExtension } from 'lexical';
 import type { EditorState } from 'lexical';
 
 // Extensions
 import { RichTextExtension } from '@lexical/rich-text';
 import { HistoryExtension } from '@lexical/history';
 import { ListExtension } from '@lexical/list';
-import { LinkExtension } from '@lexical/link';
 import { CodeExtension } from '@lexical/code';
 import {
   AutoFocusExtension,
@@ -30,8 +33,11 @@ import ListBackspacePlugin from './plugins/ListBackspacePlugin';
 import CodeBlockShortcutPlugin from './plugins/CodeBlockShortcutPlugin';
 import InitialContentPlugin from './plugins/InitialContentPlugin';
 import ImagePastePlugin from './plugins/ImagePastePlugin';
+import LinkPastePlugin from './plugins/LinkPastePlugin';
 import { ImageNode } from './nodes/ImageNode';
+import { LinkNode } from './nodes/LinkNode';
 import { IMAGE } from './transformers/ImageTransformer';
+import { LINK } from './transformers/LinkTransformer';
 
 interface NostrEditorProps {
   placeholder?: string;
@@ -52,13 +58,12 @@ export default function NostrEditor({
         name: 'NostrEditor',
         namespace: 'NostrEditor',
         theme,
-        nodes: [ImageNode],
+        nodes: [ImageNode, LinkNode],
         onError: (error: Error) => console.error('Lexical error:', error),
         dependencies: [
           RichTextExtension,
           HistoryExtension,
           ListExtension,
-          LinkExtension,
           CodeExtension,
           HorizontalRuleExtension,
           TabIndentationExtension,
@@ -91,11 +96,20 @@ export default function NostrEditor({
           )}
           <ClickOutsidePlugin />
           <ImagePastePlugin />
+          <LinkPastePlugin />
           {initialMarkdown && <InitialContentPlugin markdown={initialMarkdown} />}
           <ScrollCenterCurrentLinePlugin />
           <ListBackspacePlugin />
           <CodeBlockShortcutPlugin />
-          <MarkdownShortcutPlugin transformers={[IMAGE, ...TRANSFORMERS]} />
+          <MarkdownShortcutPlugin
+            transformers={[
+              IMAGE,
+              LINK,
+              ...ELEMENT_TRANSFORMERS,
+              ...MULTILINE_ELEMENT_TRANSFORMERS,
+              ...TEXT_FORMAT_TRANSFORMERS,
+            ]}
+          />
         </div>
       </div>
     </LexicalExtensionComposer>

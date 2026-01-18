@@ -23,7 +23,7 @@ const theme: EditorThemeClasses = {
     listitemChecked: 'line-through text-zinc-500',
     listitemUnchecked: '',
   },
-  link: 'text-blue-600 hover:underline dark:text-blue-400',
+  link: 'inline',
   text: {
     bold: 'font-bold',
     italic: 'italic',
