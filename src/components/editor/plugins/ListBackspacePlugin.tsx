@@ -49,7 +49,23 @@ export default function ListBackspacePlugin() {
           return false;
         }
 
-        // Check if we're at the very beginning of the list item
+        // Check if cursor is at the start of the first child
+        const topElement = anchorNode.getTopLevelElementOrThrow();
+        if (topElement !== listItemNode) {
+          return false;
+        }
+
+        // Get current indent level
+        const currentIndent = listItemNode.getIndent();
+
+        // If nested, outdent instead of converting to paragraph
+        if (currentIndent > 0) {
+          event?.preventDefault();
+          listItemNode.setIndent(currentIndent - 1);
+          return true;
+        }
+
+        // At root level - check if empty or convert to paragraph
         const firstChild = listItemNode.getFirstChild();
         if (!firstChild) {
           // Empty list item - convert to paragraph
@@ -60,13 +76,7 @@ export default function ListBackspacePlugin() {
           return true;
         }
 
-        // Check if cursor is at the start of the first child
-        const topElement = anchorNode.getTopLevelElementOrThrow();
-        if (topElement !== listItemNode) {
-          return false;
-        }
-
-        // Get all children content and move to paragraph
+        // Convert to paragraph with content
         event?.preventDefault();
         const paragraph = $createParagraphNode();
 
