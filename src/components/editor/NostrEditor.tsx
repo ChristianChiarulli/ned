@@ -26,7 +26,6 @@ import {
 } from '@lexical/extension';
 
 import theme from './themes/default';
-import ToolbarPlugin from './plugins/ToolbarPlugin';
 import ClickOutsidePlugin from './plugins/ClickOutsidePlugin';
 import ScrollCenterCurrentLinePlugin from './plugins/ScrollCenterCurrentLinePlugin';
 import ListBackspacePlugin from './plugins/ListBackspacePlugin';
@@ -34,10 +33,13 @@ import CodeBlockShortcutPlugin from './plugins/CodeBlockShortcutPlugin';
 import InitialContentPlugin from './plugins/InitialContentPlugin';
 import ImagePastePlugin from './plugins/ImagePastePlugin';
 import LinkPastePlugin from './plugins/LinkPastePlugin';
+import NpubPastePlugin from './plugins/NpubPastePlugin';
 import { ImageNode } from './nodes/ImageNode';
 import { LinkNode } from './nodes/LinkNode';
+import { NpubNode } from './nodes/NpubNode';
 import { IMAGE } from './transformers/ImageTransformer';
 import { LINK } from './transformers/LinkTransformer';
+import { NPUB } from './transformers/NpubTransformer';
 
 interface NostrEditorProps {
   placeholder?: string;
@@ -58,7 +60,7 @@ export default function NostrEditor({
         name: 'NostrEditor',
         namespace: 'NostrEditor',
         theme,
-        nodes: [ImageNode, LinkNode],
+        nodes: [ImageNode, LinkNode, NpubNode],
         onError: (error: Error) => console.error('Lexical error:', error),
         dependencies: [
           RichTextExtension,
@@ -75,8 +77,7 @@ export default function NostrEditor({
 
   return (
     <LexicalExtensionComposer extension={editorExtension} contentEditable={null}>
-      <div className="relative border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900">
-        <ToolbarPlugin />
+      <div className="relative">
         <div className="relative">
           <LexicalErrorBoundary onError={(error) => console.error('Lexical error:', error)}>
             <ContentEditable
@@ -97,6 +98,7 @@ export default function NostrEditor({
           <ClickOutsidePlugin />
           <ImagePastePlugin />
           <LinkPastePlugin />
+          <NpubPastePlugin />
           {initialMarkdown && <InitialContentPlugin markdown={initialMarkdown} />}
           <ScrollCenterCurrentLinePlugin />
           <ListBackspacePlugin />
@@ -105,6 +107,7 @@ export default function NostrEditor({
             transformers={[
               IMAGE,
               LINK,
+              NPUB,
               ...ELEMENT_TRANSFORMERS,
               ...MULTILINE_ELEMENT_TRANSFORMERS,
               ...TEXT_FORMAT_TRANSFORMERS,

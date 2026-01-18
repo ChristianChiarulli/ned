@@ -10,12 +10,14 @@ import {
 } from '@lexical/markdown';
 import { IMAGE } from '../transformers/ImageTransformer';
 import { LINK } from '../transformers/LinkTransformer';
+import { NPUB } from '../transformers/NpubTransformer';
 
 // IMAGE must come before LINK transformer to properly match ![alt](url) before [alt](url)
-// We exclude TEXT_MATCH_TRANSFORMERS (which contains the default LINK) and use our custom LINK instead
+// We exclude TEXT_MATCH_TRANSFORMERS (which contains the default LINK) and use our custom transformers instead
 const ALL_TRANSFORMERS = [
   IMAGE,
   LINK,
+  NPUB,
   ...ELEMENT_TRANSFORMERS,
   ...MULTILINE_ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,
