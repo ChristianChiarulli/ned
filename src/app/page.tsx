@@ -63,7 +63,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 cursor-text">
       <main className="w-full max-w-3xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4 px-4">
           NED - Nostr Editor
         </h1>
         <NostrEditor
