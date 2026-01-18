@@ -50,6 +50,10 @@ function greet(name) {
 
 Check out the [installation guide](https://authjs.dev/getting-started/installation?framework=next.js) for Auth.js.
 
+## Nostr
+
+Here's an npub: npub1ygzj9skr9val9yqxkf67yf9jshtyhvvl0x76jp5er09nsc0p3j6qr260k2
+
 ---
 
 That's a horizontal rule above. Happy writing!

@@ -32,13 +32,90 @@ export default function ClickOutsidePlugin() {
       if (!editorElement) return;
 
       const target = e.target as HTMLElement;
-
-      // If clicking inside the editor content, let default behavior handle it
-      if (editorElement.contains(target)) return;
-
-      const editorRect = editorElement.getBoundingClientRect();
       const clickX = e.clientX;
       const clickY = e.clientY;
+
+      // Check if we clicked inside the editor but to the right of actual content
+      // This handles inline decorator nodes (like npub, link) where clicking to their right
+      // should place cursor after them
+      if (editorElement.contains(target)) {
+        // Check if target is a paragraph or similar block element
+        const blockElement = target.closest('p, h1, h2, h3, h4, h5, h6, li');
+        if (blockElement && editorElement.contains(blockElement)) {
+          // Find all decorator nodes in this block - check both attribute formats
+          let decoratorSpans = blockElement.querySelectorAll('[data-lexical-decorator="true"]');
+          if (decoratorSpans.length === 0) {
+            decoratorSpans = blockElement.querySelectorAll('[data-lexical-decorator]');
+          }
+
+          // Find the rightmost decorator that's on the same line as the click
+          let rightmostDecorator: Element | null = null;
+          let rightmostDecoratorRight = 0;
+
+          for (let i = 0; i < decoratorSpans.length; i++) {
+            const span = decoratorSpans[i];
+            const rect = span.getBoundingClientRect();
+
+            // Check if this decorator is on the same line as the click (within vertical bounds)
+            if (clickY >= rect.top && clickY <= rect.bottom) {
+              if (rect.right > rightmostDecoratorRight) {
+                rightmostDecoratorRight = rect.right;
+                rightmostDecorator = span;
+              }
+            }
+          }
+
+          // If we found a decorator and the click is to its right
+          if (rightmostDecorator && clickX > rightmostDecoratorRight + 2) {
+            // Check if there's any text content after this decorator
+            const decoratorRect = rightmostDecorator.getBoundingClientRect();
+
+            // Walk through all content to find if there's text after the decorator
+            const walker = document.createTreeWalker(
+              blockElement,
+              NodeFilter.SHOW_TEXT,
+              null
+            );
+
+            let hasTextAfterDecorator = false;
+            let textNode: Text | null;
+            while ((textNode = walker.nextNode() as Text | null)) {
+              if (textNode.textContent?.trim()) {
+                const range = document.createRange();
+                range.selectNodeContents(textNode);
+                const rects = range.getClientRects();
+                for (let i = 0; i < rects.length; i++) {
+                  // If there's text to the right of the decorator on the same line
+                  if (rects[i].left >= decoratorRect.right - 2 &&
+                      clickY >= rects[i].top && clickY <= rects[i].bottom) {
+                    hasTextAfterDecorator = true;
+                    break;
+                  }
+                }
+              }
+              if (hasTextAfterDecorator) break;
+            }
+
+            // Only handle if the decorator is the last thing on the line
+            if (!hasTextAfterDecorator) {
+              editor.update(() => {
+                const node = $getNodeFromDOMNode(rightmostDecorator!);
+                if (node && $isDecoratorNode(node)) {
+                  // Use selectNext to place cursor after the decorator
+                  node.selectNext(0, 0);
+                  editorElement.focus({ preventScroll: true });
+                }
+              });
+              return;
+            }
+          }
+        }
+
+        // Let default behavior handle other clicks inside editor
+        return;
+      }
+
+      const editorRect = editorElement.getBoundingClientRect();
 
       // Check if click is within the vertical bounds of the editor
       if (clickY < editorRect.top || clickY > editorRect.bottom) {
@@ -249,12 +326,17 @@ export default function ClickOutsidePlugin() {
               const textLength = lastChild.getTextContentSize();
               selection.anchor.set(lastChild.getKey(), textLength, 'text');
               selection.focus.set(lastChild.getKey(), textLength, 'text');
-            } else if (lastChild) {
-              selection.anchor.set(lastChild.getKey(), 0, 'element');
-              selection.focus.set(lastChild.getKey(), 0, 'element');
+            } else if (lastChild && $isDecoratorNode(lastChild)) {
+              // For decorator nodes, use selectNext to place cursor after
+              lastChild.selectNext(0, 0);
+              editorElement.focus({ preventScroll: true });
+              return;
+            } else if (lastChild && $isElementNode(lastChild)) {
+              selection.anchor.set(lastChild.getKey(), lastChild.getChildrenSize(), 'element');
+              selection.focus.set(lastChild.getKey(), lastChild.getChildrenSize(), 'element');
             } else {
-              selection.anchor.set(targetNode.getKey(), 0, 'element');
-              selection.focus.set(targetNode.getKey(), 0, 'element');
+              selection.anchor.set(targetNode.getKey(), targetNode.getChildrenSize(), 'element');
+              selection.focus.set(targetNode.getKey(), targetNode.getChildrenSize(), 'element');
             }
           }
         }
