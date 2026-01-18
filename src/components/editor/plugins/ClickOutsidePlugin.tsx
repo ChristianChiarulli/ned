@@ -212,12 +212,27 @@ export default function ClickOutsidePlugin() {
             }
           }
         } else if ($isDecoratorNode(targetNode)) {
-          // For decorator nodes (like images), select the node itself
-          const nodeSelection = $createNodeSelection();
-          nodeSelection.add(targetNode.getKey());
-          $setSelection(nodeSelection);
-          editorElement.focus({ preventScroll: true });
-          return;
+          // For decorator nodes (like images, links), place cursor before or after
+          const parent = targetNode.getParent();
+          if (parent && $isElementNode(parent)) {
+            const index = targetNode.getIndexWithinParent();
+            if (isLeftSide) {
+              // Place cursor before the decorator node
+              selection.anchor.set(parent.getKey(), index, 'element');
+              selection.focus.set(parent.getKey(), index, 'element');
+            } else {
+              // Place cursor after the decorator node
+              selection.anchor.set(parent.getKey(), index + 1, 'element');
+              selection.focus.set(parent.getKey(), index + 1, 'element');
+            }
+          } else {
+            // Fallback: select the node
+            const nodeSelection = $createNodeSelection();
+            nodeSelection.add(targetNode.getKey());
+            $setSelection(nodeSelection);
+            editorElement.focus({ preventScroll: true });
+            return;
+          }
         } else if ($isElementNode(targetNode)) {
           if (isLeftSide) {
             const firstChild = targetNode.getFirstChild();
