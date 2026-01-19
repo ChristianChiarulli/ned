@@ -16,6 +16,8 @@ import {
 import { defineExtension, $getRoot } from 'lexical';
 import type { EditorState } from 'lexical';
 
+import { EditorContext, type ProfileLookupFn } from './context/EditorContext';
+
 // Extensions
 import { RichTextExtension } from '@lexical/rich-text';
 import { HistoryExtension } from '@lexical/history';
@@ -51,6 +53,7 @@ interface NostrEditorProps {
   onChange?: (editorState: EditorState) => void;
   autoFocus?: boolean;
   initialMarkdown?: string;
+  onProfileLookup?: ProfileLookupFn;
 }
 
 export interface NostrEditorHandle {
@@ -90,6 +93,7 @@ const NostrEditor = forwardRef<NostrEditorHandle, NostrEditorProps>(function Nos
     onChange,
     autoFocus = true,
     initialMarkdown,
+    onProfileLookup,
   },
   ref
 ) {
@@ -114,39 +118,46 @@ const NostrEditor = forwardRef<NostrEditorHandle, NostrEditorProps>(function Nos
     [autoFocus]
   );
 
+  const editorContextValue = useMemo(
+    () => ({ onProfileLookup }),
+    [onProfileLookup]
+  );
+
   return (
-    <LexicalExtensionComposer extension={editorExtension} contentEditable={null}>
-      <div className="relative flex-1 min-h-full flex flex-col">
-        <div className="relative flex-1 flex flex-col">
-          <LexicalErrorBoundary onError={(error) => console.error('Lexical error:', error)}>
-            <ContentEditable
-              className="min-h-full flex-auto px-4 py-8 pb-[30%] outline-none text-zinc-900 dark:text-zinc-100"
-              aria-placeholder={placeholder}
-              placeholder={
-                <div className="absolute top-8 left-4 text-zinc-400 dark:text-zinc-500 pointer-events-none select-none">
-                  {placeholder}
-                </div>
-              }
-            />
-          </LexicalErrorBoundary>
-          {onChange && (
-            <OnChangePlugin
-              onChange={(editorState) => onChange(editorState)}
-            />
-          )}
-          <EditorRefPlugin editorRef={ref as React.RefObject<NostrEditorHandle | null>} />
-          <ClickOutsidePlugin />
-          <ImagePastePlugin />
-          <LinkPastePlugin />
-          <NostrPastePlugin />
-          {initialMarkdown && <InitialContentPlugin markdown={initialMarkdown} />}
-          <ScrollCenterCurrentLinePlugin />
-          <ListBackspacePlugin />
-          <CodeBlockShortcutPlugin />
-          <MarkdownShortcutPlugin transformers={ALL_TRANSFORMERS} />
+    <EditorContext.Provider value={editorContextValue}>
+      <LexicalExtensionComposer extension={editorExtension} contentEditable={null}>
+        <div className="relative flex-1 min-h-full flex flex-col">
+          <div className="relative flex-1 flex flex-col">
+            <LexicalErrorBoundary onError={(error) => console.error('Lexical error:', error)}>
+              <ContentEditable
+                className="min-h-full flex-auto px-4 py-8 pb-[30%] outline-none text-zinc-900 dark:text-zinc-100"
+                aria-placeholder={placeholder}
+                placeholder={
+                  <div className="absolute top-8 left-4 text-zinc-400 dark:text-zinc-500 pointer-events-none select-none">
+                    {placeholder}
+                  </div>
+                }
+              />
+            </LexicalErrorBoundary>
+            {onChange && (
+              <OnChangePlugin
+                onChange={(editorState) => onChange(editorState)}
+              />
+            )}
+            <EditorRefPlugin editorRef={ref as React.RefObject<NostrEditorHandle | null>} />
+            <ClickOutsidePlugin />
+            <ImagePastePlugin />
+            <LinkPastePlugin />
+            <NostrPastePlugin />
+            {initialMarkdown && <InitialContentPlugin markdown={initialMarkdown} />}
+            <ScrollCenterCurrentLinePlugin />
+            <ListBackspacePlugin />
+            <CodeBlockShortcutPlugin />
+            <MarkdownShortcutPlugin transformers={ALL_TRANSFORMERS} />
+          </div>
         </div>
-      </div>
-    </LexicalExtensionComposer>
+      </LexicalExtensionComposer>
+    </EditorContext.Provider>
   );
 });
 

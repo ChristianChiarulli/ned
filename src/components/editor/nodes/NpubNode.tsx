@@ -16,6 +16,7 @@ import {
 } from 'lexical';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEditorContext, type NostrProfile } from '../context/EditorContext';
 
 export interface NpubPayload {
   npub: string;
@@ -42,12 +43,27 @@ function NpubComponent({
   nodeKey: NodeKey;
 }) {
   const [editor] = useLexicalComposerContext();
+  const { onProfileLookup } = useEditorContext();
   const [isEditing, setIsEditing] = useState(false);
   const [editNpub, setEditNpub] = useState(npub);
+  const [profile, setProfile] = useState<NostrProfile | null>(null);
   const containerRef = useRef<HTMLSpanElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
-  const displayText = getDisplayText(npub);
+  // Fetch profile data when npub changes
+  useEffect(() => {
+    if (onProfileLookup) {
+      console.log('[NpubNode] Looking up profile for:', npub);
+      onProfileLookup(npub).then((result) => {
+        console.log('[NpubNode] Profile result:', result);
+        setProfile(result);
+      });
+    } else {
+      console.log('[NpubNode] No onProfileLookup callback available');
+    }
+  }, [npub, onProfileLookup]);
+
+  const displayText = profile?.name || getDisplayText(npub);
 
   const handleEditClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -103,6 +119,13 @@ function NpubComponent({
 
   return (
     <span ref={containerRef} className="relative inline-flex items-center gap-1">
+      {profile?.picture && (
+        <img
+          src={profile.picture}
+          alt=""
+          className="w-4 h-4 rounded-full object-cover"
+        />
+      )}
       <span
         className="text-blue-500 cursor-default"
         title={npub}

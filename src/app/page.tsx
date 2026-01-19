@@ -8,6 +8,7 @@ import LoginButton from '@/components/auth/LoginButton';
 import PublishDialog from '@/components/publish/PublishDialog';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { lookupProfile } from '@/lib/nostr/profiles';
 import type { Blog } from '@/lib/nostr/types';
 
 
@@ -75,6 +76,7 @@ export default function Home() {
               key={selectedBlog?.id || 'default'}
               placeholder="What's on your mind?"
               initialMarkdown={editorContent}
+              onProfileLookup={lookupProfile}
             />
           </div>
         </div>
