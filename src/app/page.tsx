@@ -9,6 +9,7 @@ import PublishDialog from '@/components/publish/PublishDialog';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { lookupProfile } from '@/lib/nostr/profiles';
+import { lookupNote } from '@/lib/nostr/notes';
 import type { Blog } from '@/lib/nostr/types';
 
 
@@ -77,6 +78,7 @@ export default function Home() {
               placeholder="What's on your mind?"
               initialMarkdown={editorContent}
               onProfileLookup={lookupProfile}
+              onNoteLookup={lookupNote}
             />
           </div>
         </div>

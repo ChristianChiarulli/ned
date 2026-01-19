@@ -16,6 +16,7 @@ import {
 } from 'lexical';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEditorContext, type NostrNote } from '../context/EditorContext';
 
 export interface NeventPayload {
   nevent: string;
@@ -42,12 +43,32 @@ function NeventComponent({
   nodeKey: NodeKey;
 }) {
   const [editor] = useLexicalComposerContext();
+  const { onNoteLookup } = useEditorContext();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(nevent);
+  const [note, setNote] = useState<NostrNote | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const containerRef = useRef<HTMLSpanElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
   const displayText = getDisplayText(nevent);
+
+  // Fetch note content on mount
+  useEffect(() => {
+    if (!onNoteLookup) return;
+
+    setIsLoading(true);
+    onNoteLookup(nevent)
+      .then((result) => {
+        setNote(result);
+      })
+      .catch((err) => {
+        console.error('[NeventComponent] Note lookup failed:', err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [nevent, onNoteLookup]);
 
   const handleEditClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -100,13 +121,114 @@ function NeventComponent({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isEditing, handleCancel]);
 
+  // Truncate content for display
+  const truncatedContent = note?.content
+    ? note.content.length > 100
+      ? note.content.slice(0, 100) + '...'
+      : note.content
+    : null;
+
+  // Render note preview card when we have content
+  if (note && truncatedContent) {
+    return (
+      <span ref={containerRef} className="relative inline-block align-middle">
+        <span
+          className="inline-flex items-start gap-2 p-2 border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 rounded-lg max-w-md mx-1"
+          title={nevent}
+        >
+          {note.authorPicture && (
+            <img
+              src={note.authorPicture}
+              alt={note.authorName || 'Author'}
+              className="w-4 h-4 rounded-full flex-shrink-0 mt-0.5"
+            />
+          )}
+          <span className="flex-1 min-w-0">
+            <span className="flex items-center gap-1">
+              {note.authorName && (
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 truncate">
+                  {note.authorName}
+                </span>
+              )}
+              <button
+                onClick={handleEditClick}
+                className="inline-flex items-center justify-center w-4 h-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 rounded flex-shrink-0"
+                title="Edit nevent"
+                aria-label="Edit nevent"
+              >
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                  <path d="m15 5 4 4" />
+                </svg>
+              </button>
+            </span>
+            <span className="block text-sm text-zinc-600 dark:text-zinc-400 leading-snug">
+              &ldquo;{truncatedContent}&rdquo;
+            </span>
+          </span>
+        </span>
+
+        {isEditing && (
+          <div
+            ref={popupRef}
+            className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg p-3 min-w-80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col gap-2">
+              <div>
+                <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
+                  Nevent
+                </label>
+                <input
+                  type="text"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="nevent1..."
+                  className="w-full px-2 py-1 text-sm border border-zinc-200 dark:border-zinc-600 rounded bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500 font-mono"
+                  autoFocus
+                  autoComplete="off"
+                />
+              </div>
+              <div className="flex gap-2 justify-end mt-1">
+                <button
+                  onClick={handleCancel}
+                  className="px-2 py-1 text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="px-2 py-1 text-xs bg-blue-500 text-white hover:bg-blue-600 rounded"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </span>
+    );
+  }
+
+  // Fallback: display nevent text (loading or no note found)
   return (
     <span ref={containerRef} className="relative inline-flex items-center gap-1">
       <span
         className="text-blue-500 cursor-default"
         title={nevent}
       >
-        {displayText}
+        {isLoading ? 'Loading...' : displayText}
       </span>
       <button
         onClick={handleEditClick}

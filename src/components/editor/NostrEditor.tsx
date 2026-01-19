@@ -16,7 +16,7 @@ import {
 import { defineExtension, $getRoot } from 'lexical';
 import type { EditorState } from 'lexical';
 
-import { EditorContext, type ProfileLookupFn } from './context/EditorContext';
+import { EditorContext, type ProfileLookupFn, type NoteLookupFn } from './context/EditorContext';
 
 // Extensions
 import { RichTextExtension } from '@lexical/rich-text';
@@ -54,6 +54,7 @@ interface NostrEditorProps {
   autoFocus?: boolean;
   initialMarkdown?: string;
   onProfileLookup?: ProfileLookupFn;
+  onNoteLookup?: NoteLookupFn;
 }
 
 export interface NostrEditorHandle {
@@ -94,6 +95,7 @@ const NostrEditor = forwardRef<NostrEditorHandle, NostrEditorProps>(function Nos
     autoFocus = true,
     initialMarkdown,
     onProfileLookup,
+    onNoteLookup,
   },
   ref
 ) {
@@ -119,8 +121,8 @@ const NostrEditor = forwardRef<NostrEditorHandle, NostrEditorProps>(function Nos
   );
 
   const editorContextValue = useMemo(
-    () => ({ onProfileLookup }),
-    [onProfileLookup]
+    () => ({ onProfileLookup, onNoteLookup }),
+    [onProfileLookup, onNoteLookup]
   );
 
   return (
