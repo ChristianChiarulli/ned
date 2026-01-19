@@ -6,11 +6,15 @@ import { NostrEditor, type NostrEditorHandle } from '@/components/editor';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/sidebar/AppSidebar';
 import BlogListPanel from '@/components/sidebar/BlogListPanel';
+import DraftsPanel from '@/components/sidebar/DraftsPanel';
 import SettingsPanel from '@/components/sidebar/SettingsPanel';
 import LoginButton from '@/components/auth/LoginButton';
 import PublishDialog from '@/components/publish/PublishDialog';
+import { SaveStatusIndicator } from '@/components/SaveStatusIndicator';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { useDraftStore } from '@/lib/stores/draftStore';
+import { useDraftAutoSave } from '@/lib/hooks/useDraftAutoSave';
 import { lookupProfile } from '@/lib/nostr/profiles';
 import { lookupNote } from '@/lib/nostr/notes';
 import type { Blog } from '@/lib/nostr/types';
@@ -21,9 +25,11 @@ export default function Home() {
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [activePanel, setActivePanel] = useState<string | null>(null);
+  const [editorKey, setEditorKey] = useState(0);
   const pubkey = useAuthStore((state) => state.pubkey);
   const editorRef = useRef<NostrEditorHandle>(null);
   const queryClient = useQueryClient();
+  const { handleContentChange, savedContent } = useDraftAutoSave();
 
   useEffect(() => {
     setIsHydrated(true);
@@ -39,7 +45,12 @@ export default function Home() {
 
   const handlePublishSuccess = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['blogs'] });
-  }, [queryClient]);
+    // Clear draft and reset editor when publishing a new article (not editing existing)
+    if (!selectedBlog) {
+      useDraftStore.getState().clearDraft();
+      setEditorKey((k) => k + 1);
+    }
+  }, [queryClient, selectedBlog]);
 
   const handlePublishDialogClose = useCallback(() => {
     setShowPublishDialog(false);
@@ -53,9 +64,14 @@ export default function Home() {
     setSelectedBlog(null);
   }, []);
 
+  const handleSelectDraft = useCallback(() => {
+    setSelectedBlog(null);
+    setActivePanel(null);
+  }, []);
+
   const isLoggedIn = isHydrated && !!pubkey;
 
-  const editorContent = selectedBlog?.content ?? '';
+  const editorContent = selectedBlog ? selectedBlog.content : savedContent;
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -65,12 +81,16 @@ export default function Home() {
       {activePanel === 'blogs' && (
         <BlogListPanel onSelectBlog={handleSelectBlog} onClose={handleClosePanel} />
       )}
+      {activePanel === 'drafts' && (
+        <DraftsPanel onSelectDraft={handleSelectDraft} onClose={handleClosePanel} />
+      )}
       {activePanel === 'settings' && (
         <SettingsPanel onClose={handleClosePanel} />
       )}
 
       <SidebarInset className="bg-zinc-50 dark:bg-zinc-950">
-        <header className="flex-shrink-0 flex items-center justify-end px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
+        <header className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
+          <SaveStatusIndicator />
           <div className="flex items-center gap-2">
             {isLoggedIn && (
               <Button
@@ -88,9 +108,15 @@ export default function Home() {
           <div className="min-h-full w-full max-w-3xl mx-auto flex flex-col">
             <NostrEditor
               ref={editorRef}
-              key={selectedBlog?.id || 'default'}
+              key={selectedBlog?.id || `draft-${editorKey}`}
               placeholder="What's on your mind?"
               initialMarkdown={editorContent}
+              onChange={() => {
+                const markdown = editorRef.current?.getMarkdown() ?? '';
+                if (!selectedBlog) {
+                  handleContentChange(markdown);
+                }
+              }}
               onProfileLookup={lookupProfile}
               onNoteLookup={lookupNote}
             />

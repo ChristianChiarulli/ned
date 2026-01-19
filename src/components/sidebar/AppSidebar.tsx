@@ -1,6 +1,6 @@
 'use client';
 
-import { FileTextIcon, SettingsIcon, PlusIcon } from 'lucide-react';
+import { FileTextIcon, FileEditIcon, SettingsIcon, PlusIcon } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -50,6 +50,16 @@ export default function AppSidebar({ activePanel, onPanelChange, onNewArticle }:
                 >
                   <FileTextIcon />
                   <span>Blogs</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Drafts"
+                  isActive={activePanel === 'drafts'}
+                  onClick={() => handleClick('drafts')}
+                >
+                  <FileEditIcon />
+                  <span>Drafts</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
