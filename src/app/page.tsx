@@ -3,7 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { NostrEditor, type NostrEditorHandle } from '@/components/editor';
-import BlogSidebar from '@/components/sidebar/BlogSidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import AppSidebar from '@/components/sidebar/AppSidebar';
+import BlogListPanel from '@/components/sidebar/BlogListPanel';
+import SettingsPanel from '@/components/sidebar/SettingsPanel';
 import LoginButton from '@/components/auth/LoginButton';
 import PublishDialog from '@/components/publish/PublishDialog';
 import { Button } from '@/components/ui/button';
@@ -17,6 +20,7 @@ export default function Home() {
   const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [activePanel, setActivePanel] = useState<string | null>(null);
   const pubkey = useAuthStore((state) => state.pubkey);
   const editorRef = useRef<NostrEditorHandle>(null);
   const queryClient = useQueryClient();
@@ -41,26 +45,36 @@ export default function Home() {
     setShowPublishDialog(false);
   }, []);
 
+  const handleClosePanel = useCallback(() => {
+    setActivePanel(null);
+  }, []);
+
+  const handleNewArticle = useCallback(() => {
+    setSelectedBlog(null);
+  }, []);
+
   const isLoggedIn = isHydrated && !!pubkey;
 
   const editorContent = selectedBlog?.content ?? '';
 
   return (
-    <div className="h-screen flex bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
-      <BlogSidebar onSelectBlog={handleSelectBlog} />
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex-shrink-0 flex items-center justify-end px-8 py-4 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center gap-3">
-            {isLoggedIn && selectedBlog && (
-              <Button
-                variant="outline"
-                onClick={() => setSelectedBlog(null)}
-              >
-                New Article
-              </Button>
-            )}
+    <SidebarProvider defaultOpen={false}>
+      <AppSidebar activePanel={activePanel} onPanelChange={setActivePanel} onNewArticle={handleNewArticle} />
+
+      {/* Collapsible panels */}
+      {activePanel === 'blogs' && (
+        <BlogListPanel onSelectBlog={handleSelectBlog} onClose={handleClosePanel} />
+      )}
+      {activePanel === 'settings' && (
+        <SettingsPanel onClose={handleClosePanel} />
+      )}
+
+      <SidebarInset className="bg-zinc-50 dark:bg-zinc-950">
+        <header className="flex-shrink-0 flex items-center justify-end px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-2">
             {isLoggedIn && (
               <Button
+                size="sm"
                 variant={selectedBlog ? 'success' : 'default'}
                 onClick={() => setShowPublishDialog(true)}
               >
@@ -82,7 +96,7 @@ export default function Home() {
             />
           </div>
         </div>
-      </main>
+      </SidebarInset>
 
       <PublishDialog
         isOpen={showPublishDialog}
@@ -91,6 +105,6 @@ export default function Home() {
         existingBlog={selectedBlog}
         onPublishSuccess={handlePublishSuccess}
       />
-    </div>
+    </SidebarProvider>
   );
 }

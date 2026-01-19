@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { bech32 } from '@scure/base';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { lookupProfile } from '@/lib/nostr/profiles';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import type { NostrProfile } from '@/components/editor';
 
 // NIP-07 window.nostr interface
 declare global {
@@ -41,6 +43,7 @@ export default function LoginButton({ onLogin, onLogout }: LoginButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [profile, setProfile] = useState<NostrProfile | null>(null);
 
   // Handle hydration to avoid mismatch between server and client
   useEffect(() => {
@@ -53,6 +56,19 @@ export default function LoginButton({ onLogin, onLogout }: LoginButtonProps) {
       onLogin?.(pubkey);
     }
   }, [isHydrated, pubkey, onLogin]);
+
+  // Fetch profile when pubkey is available
+  useEffect(() => {
+    if (!pubkey) {
+      setProfile(null);
+      return;
+    }
+
+    const npub = hexToNpub(pubkey);
+    lookupProfile(npub).then((result) => {
+      setProfile(result);
+    });
+  }, [pubkey]);
 
   const handleLogin = useCallback(async () => {
     if (!window.nostr) {
@@ -82,7 +98,7 @@ export default function LoginButton({ onLogin, onLogout }: LoginButtonProps) {
 
   // Show nothing until hydrated to avoid flash
   if (!isHydrated) {
-    return <div className="h-8 w-24" />;
+    return <div className="h-7 w-20" />;
   }
 
   if (pubkey) {
@@ -91,9 +107,19 @@ export default function LoginButton({ onLogin, onLogout }: LoginButtonProps) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="font-mono">
-            {formatNpub(npub)}
-          </Button>
+          {profile?.picture ? (
+            <button className="w-7 h-7 rounded-full overflow-hidden hover:ring-2 hover:ring-zinc-300 dark:hover:ring-zinc-600 transition-shadow">
+              <img
+                src={profile.picture}
+                alt={profile.name || 'Profile'}
+                className="w-full h-full object-cover"
+              />
+            </button>
+          ) : (
+            <Button variant="ghost" size="sm" className="font-mono">
+              {formatNpub(npub)}
+            </Button>
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={handleLogout}>
@@ -127,11 +153,11 @@ export default function LoginButton({ onLogin, onLogout }: LoginButtonProps) {
           {error}
         </span>
       )}
-      <Button onClick={handleLogin} disabled={isLoading}>
+      <Button size="sm" onClick={handleLogin} disabled={isLoading}>
         {isLoading ? (
           <>
             <svg
-              className="animate-spin h-4 w-4"
+              className="animate-spin h-3.5 w-3.5"
               viewBox="0 0 24 24"
               fill="none"
               aria-hidden="true"
@@ -153,24 +179,7 @@ export default function LoginButton({ onLogin, onLogout }: LoginButtonProps) {
             Connecting...
           </>
         ) : (
-          <>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M8 12h8" />
-              <path d="M12 8v8" />
-            </svg>
-            Login with Nostr
-          </>
+          'Login'
         )}
       </Button>
     </div>
