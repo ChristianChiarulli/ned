@@ -20,12 +20,14 @@ import { useEditorContext, type NostrNote } from '../context/EditorContext';
 
 export interface NeventPayload {
   nevent: string;
+  isEmbed?: boolean;
   key?: NodeKey;
 }
 
 export type SerializedNeventNode = Spread<
   {
     nevent: string;
+    isEmbed: boolean;
   },
   SerializedLexicalNode
 >;
@@ -37,27 +39,35 @@ function getDisplayText(nevent: string): string {
 
 function NeventComponent({
   nevent,
+  isEmbed,
   nodeKey,
 }: {
   nevent: string;
+  isEmbed: boolean;
   nodeKey: NodeKey;
 }) {
   const [editor] = useLexicalComposerContext();
   const { onNoteLookup } = useEditorContext();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(nevent);
+  const [editIsEmbed, setEditIsEmbed] = useState(isEmbed);
   const [note, setNote] = useState<NostrNote | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
   const containerRef = useRef<HTMLSpanElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
   const displayText = getDisplayText(nevent);
-  const isLoading = !!onNoteLookup && !hasFetched;
+  const isLoading = isEmbed && !!onNoteLookup && !hasFetched;
 
-  // Fetch note content on mount
+  // Only fetch note content when isEmbed is true
   useEffect(() => {
-    if (!onNoteLookup) return;
+    if (!isEmbed || !onNoteLookup) {
+      setNote(null);
+      setHasFetched(true);
+      return;
+    }
 
+    setHasFetched(false);
     onNoteLookup(nevent)
       .then((result) => {
         setNote(result);
@@ -68,14 +78,15 @@ function NeventComponent({
       .finally(() => {
         setHasFetched(true);
       });
-  }, [nevent, onNoteLookup]);
+  }, [nevent, isEmbed, onNoteLookup]);
 
   const handleEditClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setEditValue(nevent);
+    setEditIsEmbed(isEmbed);
     setIsEditing(true);
-  }, [nevent]);
+  }, [nevent, isEmbed]);
 
   const handleSave = useCallback(() => {
     const trimmed = editValue.trim();
@@ -83,18 +94,19 @@ function NeventComponent({
       editor.update(() => {
         const node = $getNodeByKey(nodeKey);
         if ($isNeventNode(node)) {
-          const newNode = $createNeventNode({ nevent: trimmed });
+          const newNode = $createNeventNode({ nevent: trimmed, isEmbed: editIsEmbed });
           node.replace(newNode);
         }
       });
     }
     setIsEditing(false);
-  }, [editor, nodeKey, editValue]);
+  }, [editor, nodeKey, editValue, editIsEmbed]);
 
   const handleCancel = useCallback(() => {
     setIsEditing(false);
     setEditValue(nevent);
-  }, [nevent]);
+    setEditIsEmbed(isEmbed);
+  }, [nevent, isEmbed]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -128,8 +140,60 @@ function NeventComponent({
       : note.content
     : null;
 
-  // Render note preview card when we have content
-  if (note && truncatedContent) {
+  // Edit popup component (shared between both render modes)
+  const editPopup = isEditing && (
+    <div
+      ref={popupRef}
+      className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg p-3 min-w-80"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex flex-col gap-2">
+        <div>
+          <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
+            Nevent
+          </label>
+          <input
+            type="text"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="nevent1..."
+            className="w-full px-2 py-1 text-sm border border-zinc-200 dark:border-zinc-600 rounded bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500 font-mono"
+            autoFocus
+            autoComplete="off"
+          />
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={editIsEmbed}
+            onChange={(e) => setEditIsEmbed(e.target.checked)}
+            className="w-4 h-4 rounded"
+          />
+          <span className="text-xs text-zinc-600 dark:text-zinc-400">
+            Show as embed (nostr: prefix)
+          </span>
+        </label>
+        <div className="flex gap-2 justify-end mt-1">
+          <button
+            onClick={handleCancel}
+            className="px-2 py-1 text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-2 py-1 text-xs bg-blue-500 text-white hover:bg-blue-600 rounded"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render note preview card when isEmbed is true and we have content
+  if (isEmbed && note && truncatedContent) {
     return (
       <span ref={containerRef} className="relative inline-block align-middle">
         <span
@@ -177,51 +241,12 @@ function NeventComponent({
             </span>
           </span>
         </span>
-
-        {isEditing && (
-          <div
-            ref={popupRef}
-            className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg p-3 min-w-80"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex flex-col gap-2">
-              <div>
-                <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-                  Nevent
-                </label>
-                <input
-                  type="text"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="nevent1..."
-                  className="w-full px-2 py-1 text-sm border border-zinc-200 dark:border-zinc-600 rounded bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500 font-mono"
-                  autoFocus
-                  autoComplete="off"
-                />
-              </div>
-              <div className="flex gap-2 justify-end mt-1">
-                <button
-                  onClick={handleCancel}
-                  className="px-2 py-1 text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="px-2 py-1 text-xs bg-blue-500 text-white hover:bg-blue-600 rounded"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {editPopup}
       </span>
     );
   }
 
-  // Fallback: display nevent text (loading or no note found)
+  // Fallback: display nevent text (plain mode, loading, or no note found)
   return (
     <span ref={containerRef} className="relative inline-flex items-center gap-1">
       <span
@@ -251,64 +276,26 @@ function NeventComponent({
           <path d="m15 5 4 4" />
         </svg>
       </button>
-
-      {isEditing && (
-        <div
-          ref={popupRef}
-          className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg p-3 min-w-80"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex flex-col gap-2">
-            <div>
-              <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
-                Nevent
-              </label>
-              <input
-                type="text"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="nevent1..."
-                className="w-full px-2 py-1 text-sm border border-zinc-200 dark:border-zinc-600 rounded bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500 font-mono"
-                autoFocus
-                autoComplete="off"
-              />
-            </div>
-            <div className="flex gap-2 justify-end mt-1">
-              <button
-                onClick={handleCancel}
-                className="px-2 py-1 text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-2 py-1 text-xs bg-blue-500 text-white hover:bg-blue-600 rounded"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {editPopup}
     </span>
   );
 }
 
 export class NeventNode extends DecoratorNode<ReactNode> {
   __nevent: string;
+  __isEmbed: boolean;
 
   static getType(): string {
     return 'nevent';
   }
 
   static clone(node: NeventNode): NeventNode {
-    return new NeventNode(node.__nevent, node.__key);
+    return new NeventNode(node.__nevent, node.__isEmbed, node.__key);
   }
 
   static importJSON(serializedNode: SerializedNeventNode): NeventNode {
-    const { nevent } = serializedNode;
-    return $createNeventNode({ nevent });
+    const { nevent, isEmbed = false } = serializedNode;
+    return $createNeventNode({ nevent, isEmbed });
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -316,9 +303,10 @@ export class NeventNode extends DecoratorNode<ReactNode> {
       span: (domNode: HTMLElement) => {
         const nevent = domNode.getAttribute('data-nevent');
         if (!nevent) return null;
+        const isEmbed = domNode.getAttribute('data-is-embed') === 'true';
         return {
           conversion: () => ({
-            node: $createNeventNode({ nevent }),
+            node: $createNeventNode({ nevent, isEmbed }),
           }),
           priority: 1,
         };
@@ -326,9 +314,10 @@ export class NeventNode extends DecoratorNode<ReactNode> {
     };
   }
 
-  constructor(nevent: string, key?: NodeKey) {
+  constructor(nevent: string, isEmbed: boolean = false, key?: NodeKey) {
     super(key);
     this.__nevent = nevent;
+    this.__isEmbed = isEmbed;
   }
 
   exportJSON(): SerializedNeventNode {
@@ -336,12 +325,14 @@ export class NeventNode extends DecoratorNode<ReactNode> {
       type: 'nevent',
       version: 1,
       nevent: this.__nevent,
+      isEmbed: this.__isEmbed,
     };
   }
 
   exportDOM(): DOMExportOutput {
     const span = document.createElement('span');
     span.setAttribute('data-nevent', this.__nevent);
+    span.setAttribute('data-is-embed', String(this.__isEmbed));
     span.textContent = getDisplayText(this.__nevent);
     return { element: span };
   }
@@ -364,14 +355,19 @@ export class NeventNode extends DecoratorNode<ReactNode> {
     return this.__nevent;
   }
 
+  getIsEmbed(): boolean {
+    return this.__isEmbed;
+  }
+
   getTextContent(): string {
-    return this.__nevent;
+    return this.__isEmbed ? `nostr:${this.__nevent}` : this.__nevent;
   }
 
   decorate(): ReactNode {
     return (
       <NeventComponent
         nevent={this.__nevent}
+        isEmbed={this.__isEmbed}
         nodeKey={this.__key}
       />
     );
@@ -386,8 +382,8 @@ export class NeventNode extends DecoratorNode<ReactNode> {
   }
 }
 
-export function $createNeventNode({ nevent, key }: NeventPayload): NeventNode {
-  return $applyNodeReplacement(new NeventNode(nevent, key));
+export function $createNeventNode({ nevent, isEmbed = false, key }: NeventPayload): NeventNode {
+  return $applyNodeReplacement(new NeventNode(nevent, isEmbed, key));
 }
 
 export function $isNeventNode(node: LexicalNode | null | undefined): node is NeventNode {

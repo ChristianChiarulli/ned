@@ -14,25 +14,41 @@ import { $createNprofileNode } from '../nodes/NprofileNode';
 import { $createNeventNode } from '../nodes/NeventNode';
 import { $createNaddrNode } from '../nodes/NaddrNode';
 
-// Nostr bech32 entity patterns
-const NPUB_REGEX = /^npub1[a-z0-9]{58}$/i;
-const NPROFILE_REGEX = /^nprofile1[a-z0-9]+$/i;
-const NEVENT_REGEX = /^nevent1[a-z0-9]+$/i;
-const NADDR_REGEX = /^naddr1[a-z0-9]+$/i;
+// Nostr bech32 entity patterns - capture both with and without nostr: prefix
+const NPUB_REGEX = /^(nostr:)?(npub1[a-z0-9]{58})$/i;
+const NPROFILE_REGEX = /^(nostr:)?(nprofile1[a-z0-9]+)$/i;
+const NEVENT_REGEX = /^(nostr:)?(nevent1[a-z0-9]+)$/i;
+const NADDR_REGEX = /^(nostr:)?(naddr1[a-z0-9]+)$/i;
 
 function createNostrNode(text: string): LexicalNode | null {
-  if (NPUB_REGEX.test(text)) {
-    return $createNpubNode({ npub: text });
+  let match = text.match(NPUB_REGEX);
+  if (match) {
+    const isEmbed = !!match[1];
+    const npub = match[2];
+    return $createNpubNode({ npub, isEmbed });
   }
-  if (NPROFILE_REGEX.test(text)) {
-    return $createNprofileNode({ nprofile: text });
+
+  match = text.match(NPROFILE_REGEX);
+  if (match) {
+    const isEmbed = !!match[1];
+    const nprofile = match[2];
+    return $createNprofileNode({ nprofile, isEmbed });
   }
-  if (NEVENT_REGEX.test(text)) {
-    return $createNeventNode({ nevent: text });
+
+  match = text.match(NEVENT_REGEX);
+  if (match) {
+    const isEmbed = !!match[1];
+    const nevent = match[2];
+    return $createNeventNode({ nevent, isEmbed });
   }
-  if (NADDR_REGEX.test(text)) {
-    return $createNaddrNode({ naddr: text });
+
+  match = text.match(NADDR_REGEX);
+  if (match) {
+    const isEmbed = !!match[1];
+    const naddr = match[2];
+    return $createNaddrNode({ naddr, isEmbed });
   }
+
   return null;
 }
 

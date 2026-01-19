@@ -16,15 +16,18 @@ import {
 } from 'lexical';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEditorContext, type NostrProfile } from '../context/EditorContext';
 
 export interface NprofilePayload {
   nprofile: string;
+  isEmbed?: boolean;
   key?: NodeKey;
 }
 
 export type SerializedNprofileNode = Spread<
   {
     nprofile: string;
+    isEmbed: boolean;
   },
   SerializedLexicalNode
 >;
@@ -36,25 +39,40 @@ function getDisplayText(nprofile: string): string {
 
 function NprofileComponent({
   nprofile,
+  isEmbed,
   nodeKey,
 }: {
   nprofile: string;
+  isEmbed: boolean;
   nodeKey: NodeKey;
 }) {
   const [editor] = useLexicalComposerContext();
+  const { onProfileLookup } = useEditorContext();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(nprofile);
+  const [editIsEmbed, setEditIsEmbed] = useState(isEmbed);
+  const [profile, setProfile] = useState<NostrProfile | null>(null);
   const containerRef = useRef<HTMLSpanElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
-  const displayText = getDisplayText(nprofile);
+  // Only fetch profile data when isEmbed is true
+  useEffect(() => {
+    if (!isEmbed || !onProfileLookup) {
+      setProfile(null);
+      return;
+    }
+    onProfileLookup(nprofile).then(setProfile);
+  }, [nprofile, isEmbed, onProfileLookup]);
+
+  const displayText = (isEmbed && profile?.name) || getDisplayText(nprofile);
 
   const handleEditClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setEditValue(nprofile);
+    setEditIsEmbed(isEmbed);
     setIsEditing(true);
-  }, [nprofile]);
+  }, [nprofile, isEmbed]);
 
   const handleSave = useCallback(() => {
     const trimmed = editValue.trim();
@@ -62,18 +80,19 @@ function NprofileComponent({
       editor.update(() => {
         const node = $getNodeByKey(nodeKey);
         if ($isNprofileNode(node)) {
-          const newNode = $createNprofileNode({ nprofile: trimmed });
+          const newNode = $createNprofileNode({ nprofile: trimmed, isEmbed: editIsEmbed });
           node.replace(newNode);
         }
       });
     }
     setIsEditing(false);
-  }, [editor, nodeKey, editValue]);
+  }, [editor, nodeKey, editValue, editIsEmbed]);
 
   const handleCancel = useCallback(() => {
     setIsEditing(false);
     setEditValue(nprofile);
-  }, [nprofile]);
+    setEditIsEmbed(isEmbed);
+  }, [nprofile, isEmbed]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -102,6 +121,13 @@ function NprofileComponent({
 
   return (
     <span ref={containerRef} className="relative inline-flex items-center gap-1">
+      {isEmbed && profile?.picture && (
+        <img
+          src={profile.picture}
+          alt=""
+          className="w-4 h-4 rounded-full object-cover"
+        />
+      )}
       <span
         className="text-blue-500 cursor-default"
         title={nprofile}
@@ -152,6 +178,17 @@ function NprofileComponent({
                 autoComplete="off"
               />
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editIsEmbed}
+                onChange={(e) => setEditIsEmbed(e.target.checked)}
+                className="w-4 h-4 rounded"
+              />
+              <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                Show as embed (nostr: prefix)
+              </span>
+            </label>
             <div className="flex gap-2 justify-end mt-1">
               <button
                 onClick={handleCancel}
@@ -175,18 +212,19 @@ function NprofileComponent({
 
 export class NprofileNode extends DecoratorNode<ReactNode> {
   __nprofile: string;
+  __isEmbed: boolean;
 
   static getType(): string {
     return 'nprofile';
   }
 
   static clone(node: NprofileNode): NprofileNode {
-    return new NprofileNode(node.__nprofile, node.__key);
+    return new NprofileNode(node.__nprofile, node.__isEmbed, node.__key);
   }
 
   static importJSON(serializedNode: SerializedNprofileNode): NprofileNode {
-    const { nprofile } = serializedNode;
-    return $createNprofileNode({ nprofile });
+    const { nprofile, isEmbed = false } = serializedNode;
+    return $createNprofileNode({ nprofile, isEmbed });
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -194,9 +232,10 @@ export class NprofileNode extends DecoratorNode<ReactNode> {
       span: (domNode: HTMLElement) => {
         const nprofile = domNode.getAttribute('data-nprofile');
         if (!nprofile) return null;
+        const isEmbed = domNode.getAttribute('data-is-embed') === 'true';
         return {
           conversion: () => ({
-            node: $createNprofileNode({ nprofile }),
+            node: $createNprofileNode({ nprofile, isEmbed }),
           }),
           priority: 1,
         };
@@ -204,9 +243,10 @@ export class NprofileNode extends DecoratorNode<ReactNode> {
     };
   }
 
-  constructor(nprofile: string, key?: NodeKey) {
+  constructor(nprofile: string, isEmbed: boolean = false, key?: NodeKey) {
     super(key);
     this.__nprofile = nprofile;
+    this.__isEmbed = isEmbed;
   }
 
   exportJSON(): SerializedNprofileNode {
@@ -214,12 +254,14 @@ export class NprofileNode extends DecoratorNode<ReactNode> {
       type: 'nprofile',
       version: 1,
       nprofile: this.__nprofile,
+      isEmbed: this.__isEmbed,
     };
   }
 
   exportDOM(): DOMExportOutput {
     const span = document.createElement('span');
     span.setAttribute('data-nprofile', this.__nprofile);
+    span.setAttribute('data-is-embed', String(this.__isEmbed));
     span.textContent = getDisplayText(this.__nprofile);
     return { element: span };
   }
@@ -242,14 +284,19 @@ export class NprofileNode extends DecoratorNode<ReactNode> {
     return this.__nprofile;
   }
 
+  getIsEmbed(): boolean {
+    return this.__isEmbed;
+  }
+
   getTextContent(): string {
-    return this.__nprofile;
+    return this.__isEmbed ? `nostr:${this.__nprofile}` : this.__nprofile;
   }
 
   decorate(): ReactNode {
     return (
       <NprofileComponent
         nprofile={this.__nprofile}
+        isEmbed={this.__isEmbed}
         nodeKey={this.__key}
       />
     );
@@ -264,8 +311,8 @@ export class NprofileNode extends DecoratorNode<ReactNode> {
   }
 }
 
-export function $createNprofileNode({ nprofile, key }: NprofilePayload): NprofileNode {
-  return $applyNodeReplacement(new NprofileNode(nprofile, key));
+export function $createNprofileNode({ nprofile, isEmbed = false, key }: NprofilePayload): NprofileNode {
+  return $applyNodeReplacement(new NprofileNode(nprofile, isEmbed, key));
 }
 
 export function $isNprofileNode(node: LexicalNode | null | undefined): node is NprofileNode {

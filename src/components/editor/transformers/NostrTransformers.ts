@@ -10,14 +10,18 @@ export const NPUB: TextMatchTransformer = {
     if (!$isNpubNode(node)) {
       return null;
     }
-    return node.getNpub();
+    const npub = node.getNpub();
+    return node.getIsEmbed() ? `nostr:${npub}` : npub;
   },
-  importRegExp: /npub1[a-z0-9]{58}/i,
-  regExp: /npub1[a-z0-9]{58}$/i,
+  // Match both with and without nostr: prefix, capture just the npub part
+  importRegExp: /(?:nostr:)?(npub1[a-z0-9]{58})/i,
+  regExp: /(?:nostr:)?(npub1[a-z0-9]{58})$/i,
   trigger: ' ',
   replace: (textNode, match) => {
-    const [npub] = match;
-    const npubNode = $createNpubNode({ npub });
+    const fullMatch = match[0];
+    const npub = match[1];
+    const isEmbed = fullMatch.toLowerCase().startsWith('nostr:');
+    const npubNode = $createNpubNode({ npub, isEmbed });
     textNode.replace(npubNode);
   },
   type: 'text-match',
@@ -29,15 +33,18 @@ export const NPROFILE: TextMatchTransformer = {
     if (!$isNprofileNode(node)) {
       return null;
     }
-    return node.getNprofile();
+    const nprofile = node.getNprofile();
+    return node.getIsEmbed() ? `nostr:${nprofile}` : nprofile;
   },
   // nprofile has variable length (contains pubkey + optional relays)
-  importRegExp: /nprofile1[a-z0-9]+/i,
-  regExp: /nprofile1[a-z0-9]+$/i,
+  importRegExp: /(?:nostr:)?(nprofile1[a-z0-9]+)/i,
+  regExp: /(?:nostr:)?(nprofile1[a-z0-9]+)$/i,
   trigger: ' ',
   replace: (textNode, match) => {
-    const [nprofile] = match;
-    const node = $createNprofileNode({ nprofile });
+    const fullMatch = match[0];
+    const nprofile = match[1];
+    const isEmbed = fullMatch.toLowerCase().startsWith('nostr:');
+    const node = $createNprofileNode({ nprofile, isEmbed });
     textNode.replace(node);
   },
   type: 'text-match',
@@ -49,15 +56,18 @@ export const NEVENT: TextMatchTransformer = {
     if (!$isNeventNode(node)) {
       return null;
     }
-    return node.getNevent();
+    const nevent = node.getNevent();
+    return node.getIsEmbed() ? `nostr:${nevent}` : nevent;
   },
   // nevent has variable length (contains event id + optional relays/author)
-  importRegExp: /nevent1[a-z0-9]+/i,
-  regExp: /nevent1[a-z0-9]+$/i,
+  importRegExp: /(?:nostr:)?(nevent1[a-z0-9]+)/i,
+  regExp: /(?:nostr:)?(nevent1[a-z0-9]+)$/i,
   trigger: ' ',
   replace: (textNode, match) => {
-    const [nevent] = match;
-    const node = $createNeventNode({ nevent });
+    const fullMatch = match[0];
+    const nevent = match[1];
+    const isEmbed = fullMatch.toLowerCase().startsWith('nostr:');
+    const node = $createNeventNode({ nevent, isEmbed });
     textNode.replace(node);
   },
   type: 'text-match',
@@ -69,15 +79,18 @@ export const NADDR: TextMatchTransformer = {
     if (!$isNaddrNode(node)) {
       return null;
     }
-    return node.getNaddr();
+    const naddr = node.getNaddr();
+    return node.getIsEmbed() ? `nostr:${naddr}` : naddr;
   },
   // naddr has variable length (contains kind + pubkey + d-tag + optional relays)
-  importRegExp: /naddr1[a-z0-9]+/i,
-  regExp: /naddr1[a-z0-9]+$/i,
+  importRegExp: /(?:nostr:)?(naddr1[a-z0-9]+)/i,
+  regExp: /(?:nostr:)?(naddr1[a-z0-9]+)$/i,
   trigger: ' ',
   replace: (textNode, match) => {
-    const [naddr] = match;
-    const node = $createNaddrNode({ naddr });
+    const fullMatch = match[0];
+    const naddr = match[1];
+    const isEmbed = fullMatch.toLowerCase().startsWith('nostr:');
+    const node = $createNaddrNode({ naddr, isEmbed });
     textNode.replace(node);
   },
   type: 'text-match',

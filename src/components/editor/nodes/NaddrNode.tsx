@@ -19,12 +19,14 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 export interface NaddrPayload {
   naddr: string;
+  isEmbed?: boolean;
   key?: NodeKey;
 }
 
 export type SerializedNaddrNode = Spread<
   {
     naddr: string;
+    isEmbed: boolean;
   },
   SerializedLexicalNode
 >;
@@ -36,14 +38,17 @@ function getDisplayText(naddr: string): string {
 
 function NaddrComponent({
   naddr,
+  isEmbed,
   nodeKey,
 }: {
   naddr: string;
+  isEmbed: boolean;
   nodeKey: NodeKey;
 }) {
   const [editor] = useLexicalComposerContext();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(naddr);
+  const [editIsEmbed, setEditIsEmbed] = useState(isEmbed);
   const containerRef = useRef<HTMLSpanElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -53,8 +58,9 @@ function NaddrComponent({
     e.preventDefault();
     e.stopPropagation();
     setEditValue(naddr);
+    setEditIsEmbed(isEmbed);
     setIsEditing(true);
-  }, [naddr]);
+  }, [naddr, isEmbed]);
 
   const handleSave = useCallback(() => {
     const trimmed = editValue.trim();
@@ -62,18 +68,19 @@ function NaddrComponent({
       editor.update(() => {
         const node = $getNodeByKey(nodeKey);
         if ($isNaddrNode(node)) {
-          const newNode = $createNaddrNode({ naddr: trimmed });
+          const newNode = $createNaddrNode({ naddr: trimmed, isEmbed: editIsEmbed });
           node.replace(newNode);
         }
       });
     }
     setIsEditing(false);
-  }, [editor, nodeKey, editValue]);
+  }, [editor, nodeKey, editValue, editIsEmbed]);
 
   const handleCancel = useCallback(() => {
     setIsEditing(false);
     setEditValue(naddr);
-  }, [naddr]);
+    setEditIsEmbed(isEmbed);
+  }, [naddr, isEmbed]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -152,6 +159,17 @@ function NaddrComponent({
                 autoComplete="off"
               />
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editIsEmbed}
+                onChange={(e) => setEditIsEmbed(e.target.checked)}
+                className="w-4 h-4 rounded"
+              />
+              <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                Show as embed (nostr: prefix)
+              </span>
+            </label>
             <div className="flex gap-2 justify-end mt-1">
               <button
                 onClick={handleCancel}
@@ -175,18 +193,19 @@ function NaddrComponent({
 
 export class NaddrNode extends DecoratorNode<ReactNode> {
   __naddr: string;
+  __isEmbed: boolean;
 
   static getType(): string {
     return 'naddr';
   }
 
   static clone(node: NaddrNode): NaddrNode {
-    return new NaddrNode(node.__naddr, node.__key);
+    return new NaddrNode(node.__naddr, node.__isEmbed, node.__key);
   }
 
   static importJSON(serializedNode: SerializedNaddrNode): NaddrNode {
-    const { naddr } = serializedNode;
-    return $createNaddrNode({ naddr });
+    const { naddr, isEmbed = false } = serializedNode;
+    return $createNaddrNode({ naddr, isEmbed });
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -194,9 +213,10 @@ export class NaddrNode extends DecoratorNode<ReactNode> {
       span: (domNode: HTMLElement) => {
         const naddr = domNode.getAttribute('data-naddr');
         if (!naddr) return null;
+        const isEmbed = domNode.getAttribute('data-is-embed') === 'true';
         return {
           conversion: () => ({
-            node: $createNaddrNode({ naddr }),
+            node: $createNaddrNode({ naddr, isEmbed }),
           }),
           priority: 1,
         };
@@ -204,9 +224,10 @@ export class NaddrNode extends DecoratorNode<ReactNode> {
     };
   }
 
-  constructor(naddr: string, key?: NodeKey) {
+  constructor(naddr: string, isEmbed: boolean = false, key?: NodeKey) {
     super(key);
     this.__naddr = naddr;
+    this.__isEmbed = isEmbed;
   }
 
   exportJSON(): SerializedNaddrNode {
@@ -214,12 +235,14 @@ export class NaddrNode extends DecoratorNode<ReactNode> {
       type: 'naddr',
       version: 1,
       naddr: this.__naddr,
+      isEmbed: this.__isEmbed,
     };
   }
 
   exportDOM(): DOMExportOutput {
     const span = document.createElement('span');
     span.setAttribute('data-naddr', this.__naddr);
+    span.setAttribute('data-is-embed', String(this.__isEmbed));
     span.textContent = getDisplayText(this.__naddr);
     return { element: span };
   }
@@ -242,14 +265,19 @@ export class NaddrNode extends DecoratorNode<ReactNode> {
     return this.__naddr;
   }
 
+  getIsEmbed(): boolean {
+    return this.__isEmbed;
+  }
+
   getTextContent(): string {
-    return this.__naddr;
+    return this.__isEmbed ? `nostr:${this.__naddr}` : this.__naddr;
   }
 
   decorate(): ReactNode {
     return (
       <NaddrComponent
         naddr={this.__naddr}
+        isEmbed={this.__isEmbed}
         nodeKey={this.__key}
       />
     );
@@ -264,8 +292,8 @@ export class NaddrNode extends DecoratorNode<ReactNode> {
   }
 }
 
-export function $createNaddrNode({ naddr, key }: NaddrPayload): NaddrNode {
-  return $applyNodeReplacement(new NaddrNode(naddr, key));
+export function $createNaddrNode({ naddr, isEmbed = false, key }: NaddrPayload): NaddrNode {
+  return $applyNodeReplacement(new NaddrNode(naddr, isEmbed, key));
 }
 
 export function $isNaddrNode(node: LexicalNode | null | undefined): node is NaddrNode {

@@ -20,12 +20,14 @@ import { useEditorContext, type NostrProfile } from '../context/EditorContext';
 
 export interface NpubPayload {
   npub: string;
+  isEmbed?: boolean;
   key?: NodeKey;
 }
 
 export type SerializedNpubNode = Spread<
   {
     npub: string;
+    isEmbed: boolean;
   },
   SerializedLexicalNode
 >;
@@ -37,40 +39,40 @@ function getDisplayText(npub: string): string {
 
 function NpubComponent({
   npub,
+  isEmbed,
   nodeKey,
 }: {
   npub: string;
+  isEmbed: boolean;
   nodeKey: NodeKey;
 }) {
   const [editor] = useLexicalComposerContext();
   const { onProfileLookup } = useEditorContext();
   const [isEditing, setIsEditing] = useState(false);
   const [editNpub, setEditNpub] = useState(npub);
+  const [editIsEmbed, setEditIsEmbed] = useState(isEmbed);
   const [profile, setProfile] = useState<NostrProfile | null>(null);
   const containerRef = useRef<HTMLSpanElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
-  // Fetch profile data when npub changes
+  // Only fetch profile data when isEmbed is true
   useEffect(() => {
-    if (onProfileLookup) {
-      console.log('[NpubNode] Looking up profile for:', npub);
-      onProfileLookup(npub).then((result) => {
-        console.log('[NpubNode] Profile result:', result);
-        setProfile(result);
-      });
-    } else {
-      console.log('[NpubNode] No onProfileLookup callback available');
+    if (!isEmbed || !onProfileLookup) {
+      setProfile(null);
+      return;
     }
-  }, [npub, onProfileLookup]);
+    onProfileLookup(npub).then(setProfile);
+  }, [npub, isEmbed, onProfileLookup]);
 
-  const displayText = profile?.name || getDisplayText(npub);
+  const displayText = (isEmbed && profile?.name) || getDisplayText(npub);
 
   const handleEditClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setEditNpub(npub);
+    setEditIsEmbed(isEmbed);
     setIsEditing(true);
-  }, [npub]);
+  }, [npub, isEmbed]);
 
   const handleSave = useCallback(() => {
     const trimmedNpub = editNpub.trim();
@@ -78,18 +80,19 @@ function NpubComponent({
       editor.update(() => {
         const node = $getNodeByKey(nodeKey);
         if ($isNpubNode(node)) {
-          const newNode = $createNpubNode({ npub: trimmedNpub });
+          const newNode = $createNpubNode({ npub: trimmedNpub, isEmbed: editIsEmbed });
           node.replace(newNode);
         }
       });
     }
     setIsEditing(false);
-  }, [editor, nodeKey, editNpub]);
+  }, [editor, nodeKey, editNpub, editIsEmbed]);
 
   const handleCancel = useCallback(() => {
     setIsEditing(false);
     setEditNpub(npub);
-  }, [npub]);
+    setEditIsEmbed(isEmbed);
+  }, [npub, isEmbed]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -119,7 +122,7 @@ function NpubComponent({
 
   return (
     <span ref={containerRef} className="relative inline-flex items-center gap-1">
-      {profile?.picture && (
+      {isEmbed && profile?.picture && (
         <img
           src={profile.picture}
           alt=""
@@ -176,6 +179,17 @@ function NpubComponent({
                 autoComplete="off"
               />
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editIsEmbed}
+                onChange={(e) => setEditIsEmbed(e.target.checked)}
+                className="w-4 h-4 rounded"
+              />
+              <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                Show as embed (nostr: prefix)
+              </span>
+            </label>
             <div className="flex gap-2 justify-end mt-1">
               <button
                 onClick={handleCancel}
@@ -199,18 +213,19 @@ function NpubComponent({
 
 export class NpubNode extends DecoratorNode<ReactNode> {
   __npub: string;
+  __isEmbed: boolean;
 
   static getType(): string {
     return 'npub';
   }
 
   static clone(node: NpubNode): NpubNode {
-    return new NpubNode(node.__npub, node.__key);
+    return new NpubNode(node.__npub, node.__isEmbed, node.__key);
   }
 
   static importJSON(serializedNode: SerializedNpubNode): NpubNode {
-    const { npub } = serializedNode;
-    return $createNpubNode({ npub });
+    const { npub, isEmbed = false } = serializedNode;
+    return $createNpubNode({ npub, isEmbed });
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -218,9 +233,10 @@ export class NpubNode extends DecoratorNode<ReactNode> {
       span: (domNode: HTMLElement) => {
         const npub = domNode.getAttribute('data-npub');
         if (!npub) return null;
+        const isEmbed = domNode.getAttribute('data-is-embed') === 'true';
         return {
           conversion: () => ({
-            node: $createNpubNode({ npub }),
+            node: $createNpubNode({ npub, isEmbed }),
           }),
           priority: 1,
         };
@@ -228,9 +244,10 @@ export class NpubNode extends DecoratorNode<ReactNode> {
     };
   }
 
-  constructor(npub: string, key?: NodeKey) {
+  constructor(npub: string, isEmbed: boolean = false, key?: NodeKey) {
     super(key);
     this.__npub = npub;
+    this.__isEmbed = isEmbed;
   }
 
   exportJSON(): SerializedNpubNode {
@@ -238,12 +255,14 @@ export class NpubNode extends DecoratorNode<ReactNode> {
       type: 'npub',
       version: 1,
       npub: this.__npub,
+      isEmbed: this.__isEmbed,
     };
   }
 
   exportDOM(): DOMExportOutput {
     const span = document.createElement('span');
     span.setAttribute('data-npub', this.__npub);
+    span.setAttribute('data-is-embed', String(this.__isEmbed));
     span.textContent = getDisplayText(this.__npub);
     return { element: span };
   }
@@ -266,14 +285,19 @@ export class NpubNode extends DecoratorNode<ReactNode> {
     return this.__npub;
   }
 
+  getIsEmbed(): boolean {
+    return this.__isEmbed;
+  }
+
   getTextContent(): string {
-    return this.__npub;
+    return this.__isEmbed ? `nostr:${this.__npub}` : this.__npub;
   }
 
   decorate(): ReactNode {
     return (
       <NpubComponent
         npub={this.__npub}
+        isEmbed={this.__isEmbed}
         nodeKey={this.__key}
       />
     );
@@ -288,8 +312,8 @@ export class NpubNode extends DecoratorNode<ReactNode> {
   }
 }
 
-export function $createNpubNode({ npub, key }: NpubPayload): NpubNode {
-  return $applyNodeReplacement(new NpubNode(npub, key));
+export function $createNpubNode({ npub, isEmbed = false, key }: NpubPayload): NpubNode {
+  return $applyNodeReplacement(new NpubNode(npub, isEmbed, key));
 }
 
 export function $isNpubNode(node: LexicalNode | null | undefined): node is NpubNode {
