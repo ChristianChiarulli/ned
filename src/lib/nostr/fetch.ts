@@ -42,7 +42,8 @@ export async function fetchBlogs({
         ws.send(JSON.stringify(['CLOSE', subId]));
         ws.close();
         const blogs = events.map(eventToBlog);
-        const nextCursor = blogs.length > 0 ? Math.min(...blogs.map((b) => b.createdAt)) : undefined;
+        // Only set nextCursor if we got a full page (might be more), and subtract 1 to avoid duplicates
+        const nextCursor = blogs.length >= limit ? Math.min(...blogs.map((b) => b.createdAt)) - 1 : undefined;
         resolve({ blogs, nextCursor });
       }, 10000);
     };
@@ -63,7 +64,8 @@ export async function fetchBlogs({
           ws.send(JSON.stringify(['CLOSE', subId]));
           ws.close();
           const blogs = events.map(eventToBlog);
-          const nextCursor = blogs.length > 0 ? Math.min(...blogs.map((b) => b.createdAt)) : undefined;
+          // Only set nextCursor if we got a full page (might be more), and subtract 1 to avoid duplicates
+          const nextCursor = blogs.length >= limit ? Math.min(...blogs.map((b) => b.createdAt)) - 1 : undefined;
           resolve({ blogs, nextCursor });
         }
       } catch {
