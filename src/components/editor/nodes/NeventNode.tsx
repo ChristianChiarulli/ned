@@ -47,17 +47,17 @@ function NeventComponent({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(nevent);
   const [note, setNote] = useState<NostrNote | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
   const containerRef = useRef<HTMLSpanElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
   const displayText = getDisplayText(nevent);
+  const isLoading = !!onNoteLookup && !hasFetched;
 
   // Fetch note content on mount
   useEffect(() => {
     if (!onNoteLookup) return;
 
-    setIsLoading(true);
     onNoteLookup(nevent)
       .then((result) => {
         setNote(result);
@@ -66,7 +66,7 @@ function NeventComponent({
         console.error('[NeventComponent] Note lookup failed:', err);
       })
       .finally(() => {
-        setIsLoading(false);
+        setHasFetched(true);
       });
   }, [nevent, onNoteLookup]);
 
