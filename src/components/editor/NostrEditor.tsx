@@ -1,17 +1,19 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useImperativeHandle, forwardRef } from 'react';
 import { LexicalExtensionComposer } from '@lexical/react/LexicalExtensionComposer';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin';
 import {
+  $convertToMarkdownString,
   ELEMENT_TRANSFORMERS,
   MULTILINE_ELEMENT_TRANSFORMERS,
   TEXT_FORMAT_TRANSFORMERS,
 } from '@lexical/markdown';
-import { defineExtension } from 'lexical';
+import { defineExtension, $getRoot } from 'lexical';
 import type { EditorState } from 'lexical';
 
 // Extensions
@@ -51,12 +53,46 @@ interface NostrEditorProps {
   initialMarkdown?: string;
 }
 
-export default function NostrEditor({
-  placeholder = 'Start writing...',
-  onChange,
-  autoFocus = true,
-  initialMarkdown,
-}: NostrEditorProps) {
+export interface NostrEditorHandle {
+  getMarkdown: () => string;
+}
+
+// All transformers for markdown conversion
+const ALL_TRANSFORMERS = [
+  IMAGE,
+  LINK,
+  ...NOSTR_TRANSFORMERS,
+  ...ELEMENT_TRANSFORMERS,
+  ...MULTILINE_ELEMENT_TRANSFORMERS,
+  ...TEXT_FORMAT_TRANSFORMERS,
+];
+
+// Inner component to access editor context
+function EditorRefPlugin({ editorRef }: { editorRef: React.RefObject<NostrEditorHandle | null> }) {
+  const [editor] = useLexicalComposerContext();
+
+  useImperativeHandle(editorRef, () => ({
+    getMarkdown: () => {
+      let markdown = '';
+      editor.getEditorState().read(() => {
+        markdown = $convertToMarkdownString(ALL_TRANSFORMERS);
+      });
+      return markdown;
+    },
+  }));
+
+  return null;
+}
+
+const NostrEditor = forwardRef<NostrEditorHandle, NostrEditorProps>(function NostrEditor(
+  {
+    placeholder = 'Start writing...',
+    onChange,
+    autoFocus = true,
+    initialMarkdown,
+  },
+  ref
+) {
   const editorExtension = useMemo(
     () =>
       defineExtension({
@@ -98,6 +134,7 @@ export default function NostrEditor({
               onChange={(editorState) => onChange(editorState)}
             />
           )}
+          <EditorRefPlugin editorRef={ref as React.RefObject<NostrEditorHandle | null>} />
           <ClickOutsidePlugin />
           <ImagePastePlugin />
           <LinkPastePlugin />
@@ -106,18 +143,11 @@ export default function NostrEditor({
           <ScrollCenterCurrentLinePlugin />
           <ListBackspacePlugin />
           <CodeBlockShortcutPlugin />
-          <MarkdownShortcutPlugin
-            transformers={[
-              IMAGE,
-              LINK,
-              ...NOSTR_TRANSFORMERS,
-              ...ELEMENT_TRANSFORMERS,
-              ...MULTILINE_ELEMENT_TRANSFORMERS,
-              ...TEXT_FORMAT_TRANSFORMERS,
-            ]}
-          />
+          <MarkdownShortcutPlugin transformers={ALL_TRANSFORMERS} />
         </div>
       </div>
     </LexicalExtensionComposer>
   );
-}
+});
+
+export default NostrEditor;

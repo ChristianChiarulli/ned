@@ -35,6 +35,11 @@ export default function ClickOutsidePlugin() {
       const clickX = e.clientX;
       const clickY = e.clientY;
 
+      // Ignore clicks on interactive elements outside the editor (inputs, buttons, etc.)
+      if (target.closest('input, button, textarea, select, [role="button"], aside')) {
+        return;
+      }
+
       // Check if we clicked inside the editor but to the right of actual content
       // This handles inline decorator nodes (like npub, link) where clicking to their right
       // should place cursor after them

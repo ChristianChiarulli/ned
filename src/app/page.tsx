@@ -1,76 +1,92 @@
 'use client';
 
-import { NostrEditor } from '@/components/editor';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { NostrEditor, type NostrEditorHandle } from '@/components/editor';
+import BlogSidebar from '@/components/sidebar/BlogSidebar';
+import LoginButton from '@/components/auth/LoginButton';
+import PublishDialog from '@/components/publish/PublishDialog';
+import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/lib/stores/authStore';
+import type { Blog } from '@/lib/nostr/types';
 
-const sampleContent = `# Welcome to NED
-
-This is a **Nostr Editor** built with *Lexical*. It supports various markdown features.
-
-## Text Formatting
-
-You can write **bold**, *italic*, ~~strikethrough~~, and \`inline code\`.
-
-## Lists
-
-Here's a bullet list:
-- First item
-- Second item
-    - Nested item one
-    - Nested item two
-- Third item
-
-And a numbered list:
-1. Step one
-2. Step two
-3. Step three
-
-## Code Blocks
-
-Here's a multiline code block:
-
-\`\`\`javascript
-function greet(name) {
-  console.log(\`Hello, \${name}!\`);
-
-  // Empty line above
-  return true;
-}
-\`\`\`
-
-## Blockquotes
-
-> This is a blockquote.
-> It can span multiple lines.
-
-## Images
-
-![Saturn](https://cdn.mos.cms.futurecdn.net/BwL2586BtvBPywasXXtzwA-1000-80.jpeg.webp)
-
-## Links
-
-Check out the [installation guide](https://authjs.dev/getting-started/installation?framework=next.js) for Auth.js.
-
-## Nostr
-
-Here's an npub: npub1ygzj9skr9val9yqxkf67yf9jshtyhvvl0x76jp5er09nsc0p3j6qr260k2
-
----
-
-That's a horizontal rule above. Happy writing!
-`;
 
 export default function Home() {
+  const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const pubkey = useAuthStore((state) => state.pubkey);
+  const editorRef = useRef<NostrEditorHandle>(null);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  const handleSelectBlog = (blog: Blog) => {
+    setSelectedBlog(blog);
+  };
+
+  const getEditorContent = useCallback(() => {
+    return editorRef.current?.getMarkdown() ?? '';
+  }, []);
+
+  const handlePublishSuccess = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['blogs'] });
+  }, [queryClient]);
+
+  const handlePublishDialogClose = useCallback(() => {
+    setShowPublishDialog(false);
+  }, []);
+
+  const isLoggedIn = isHydrated && !!pubkey;
+
+  const editorContent = selectedBlog?.content ?? '';
+
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 cursor-text">
-      <main className="w-full max-w-3xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4 px-4">
-          NED - Nostr Editor
-        </h1>
-        <NostrEditor
-          placeholder="What's on your mind?"
-          initialMarkdown={sampleContent}
-        />
+    <div className="h-screen flex bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
+      <BlogSidebar onSelectBlog={handleSelectBlog} />
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <header className="flex-shrink-0 flex items-center justify-end px-8 py-4 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-3">
+            {isLoggedIn && selectedBlog && (
+              <Button
+                variant="outline"
+                onClick={() => setSelectedBlog(null)}
+              >
+                New Article
+              </Button>
+            )}
+            {isLoggedIn && (
+              <Button
+                variant={selectedBlog ? 'success' : 'default'}
+                onClick={() => setShowPublishDialog(true)}
+              >
+                {selectedBlog ? 'Publish Edit' : 'Publish'}
+              </Button>
+            )}
+            <LoginButton />
+          </div>
+        </header>
+        <div className="flex-1 overflow-y-auto cursor-text">
+          <div className="w-full max-w-3xl mx-auto px-4 py-6">
+            <NostrEditor
+              ref={editorRef}
+              key={selectedBlog?.id || 'default'}
+              placeholder="What's on your mind?"
+              initialMarkdown={editorContent}
+            />
+          </div>
+        </div>
       </main>
+
+      <PublishDialog
+        isOpen={showPublishDialog}
+        onClose={handlePublishDialogClose}
+        getContent={getEditorContent}
+        existingBlog={selectedBlog}
+        onPublishSuccess={handlePublishSuccess}
+      />
     </div>
   );
 }
