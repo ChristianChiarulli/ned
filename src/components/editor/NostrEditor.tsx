@@ -116,14 +116,14 @@ const NostrEditor = forwardRef<NostrEditorHandle, NostrEditorProps>(function Nos
 
   return (
     <LexicalExtensionComposer extension={editorExtension} contentEditable={null}>
-      <div className="relative">
-        <div className="relative">
+      <div className="relative flex-1 min-h-full flex flex-col">
+        <div className="relative flex-1 flex flex-col">
           <LexicalErrorBoundary onError={(error) => console.error('Lexical error:', error)}>
             <ContentEditable
-              className="flex-1 px-4 py-3 outline-none text-zinc-900 dark:text-zinc-100"
+              className="min-h-full flex-auto px-4 py-8 pb-[30%] outline-none text-zinc-900 dark:text-zinc-100"
               aria-placeholder={placeholder}
               placeholder={
-                <div className="absolute top-3 left-4 text-zinc-400 dark:text-zinc-500 pointer-events-none select-none">
+                <div className="absolute top-8 left-4 text-zinc-400 dark:text-zinc-500 pointer-events-none select-none">
                   {placeholder}
                 </div>
               }

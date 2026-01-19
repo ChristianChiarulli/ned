@@ -69,7 +69,7 @@ export default function Home() {
           </div>
         </header>
         <div className="flex-1 overflow-y-auto cursor-text">
-          <div className="w-full max-w-3xl mx-auto px-4 py-6">
+          <div className="min-h-full w-full max-w-3xl mx-auto flex flex-col">
             <NostrEditor
               ref={editorRef}
               key={selectedBlog?.id || 'default'}
