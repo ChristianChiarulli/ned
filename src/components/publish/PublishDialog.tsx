@@ -160,6 +160,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   className="text-green-600 dark:text-green-400"
+                  aria-hidden="true"
                 >
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                   <polyline points="22 4 12 14.01 9 11.01" />
@@ -186,6 +187,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                       stroke="currentColor"
                       strokeWidth="2"
                       className="text-green-500 flex-shrink-0"
+                      aria-hidden="true"
                     >
                       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                       <polyline points="22 4 12 14.01 9 11.01" />
@@ -199,6 +201,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                       stroke="currentColor"
                       strokeWidth="2"
                       className="text-red-500 flex-shrink-0"
+                      aria-hidden="true"
                     >
                       <circle cx="12" cy="12" r="10" />
                       <path d="m15 9-6 6" />
@@ -243,6 +246,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                 disabled={isPublishing}
                 className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-md text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
                 required
+                autoComplete="off"
               />
             </div>
 
@@ -258,6 +262,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                 rows={3}
                 disabled={isPublishing}
                 className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-md text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none disabled:opacity-50"
+                autoComplete="off"
               />
             </div>
 
@@ -273,6 +278,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                 placeholder="https://example.com/image.jpg"
                 disabled={isPublishing}
                 className="w-full px-3 py-2 text-sm bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-md text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
+                autoComplete="url"
               />
             </div>
 
@@ -290,6 +296,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                   placeholder="Add a tag"
                   disabled={isPublishing}
                   className="flex-1 px-3 py-2 text-sm bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-md text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
+                  autoComplete="off"
                 />
                 <Button
                   type="button"
@@ -313,6 +320,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                         onClick={() => handleRemoveTag(tag)}
                         disabled={isPublishing}
                         className="hover:text-red-500 disabled:opacity-50"
+                        aria-label={`Remove ${tag} tag`}
                       >
                         <svg
                           width="12"
@@ -323,6 +331,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
+                          aria-hidden="true"
                         >
                           <path d="M18 6 6 18" />
                           <path d="m6 6 12 12" />
@@ -351,6 +360,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                           className="animate-spin h-3 w-3 text-purple-500 flex-shrink-0"
                           viewBox="0 0 24 24"
                           fill="none"
+                          aria-hidden="true"
                         >
                           <circle
                             className="opacity-25"
@@ -375,6 +385,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                           stroke="currentColor"
                           strokeWidth="2"
                           className="text-green-500 flex-shrink-0"
+                          aria-hidden="true"
                         >
                           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                           <polyline points="22 4 12 14.01 9 11.01" />
@@ -388,6 +399,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                           stroke="currentColor"
                           strokeWidth="2"
                           className="text-red-500 flex-shrink-0"
+                          aria-hidden="true"
                         >
                           <circle cx="12" cy="12" r="10" />
                           <path d="m15 9-6 6" />
@@ -405,6 +417,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         className="text-green-500 flex-shrink-0"
+                        aria-hidden="true"
                       >
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                         <polyline points="22 4 12 14.01 9 11.01" />
@@ -441,6 +454,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
                       className="animate-spin h-4 w-4"
                       viewBox="0 0 24 24"
                       fill="none"
+                      aria-hidden="true"
                     >
                       <circle
                         className="opacity-25"

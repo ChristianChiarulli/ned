@@ -66,6 +66,7 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
           onClick={onBack}
           className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
           title="Back to blogs"
+          aria-label="Back to blogs"
         >
           <svg
             width="16"
@@ -76,6 +77,7 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
           >
             <path d="m15 18-6-6 6-6" />
           </svg>
@@ -105,6 +107,7 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
                     onClick={() => removeRelay(relay)}
                     className="p-1 rounded hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400"
                     title="Remove relay"
+                    aria-label="Remove relay"
                   >
                     <svg
                       width="12"
@@ -115,6 +118,7 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
+                      aria-hidden="true"
                     >
                       <path d="M18 6 6 18" />
                       <path d="m6 6 12 12" />
@@ -137,6 +141,7 @@ function SettingsPanel({ onBack }: { onBack: () => void }) {
                 onKeyDown={handleKeyDown}
                 placeholder="wss://relay.example.com"
                 className="flex-1 px-2 py-1.5 text-xs bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                autoComplete="url"
               />
               <Button
                 size="sm"
@@ -223,6 +228,7 @@ export default function BlogSidebar({ onSelectBlog }: BlogSidebarProps) {
                   onClick={() => setShowSettings(true)}
                   className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                   title="Settings"
+                  aria-label="Settings"
                 >
                   <svg
                     width="16"
@@ -233,6 +239,7 @@ export default function BlogSidebar({ onSelectBlog }: BlogSidebarProps) {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    aria-hidden="true"
                   >
                     <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
                     <circle cx="12" cy="12" r="3" />
@@ -243,6 +250,7 @@ export default function BlogSidebar({ onSelectBlog }: BlogSidebarProps) {
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
                 <svg
                   width="16"
@@ -254,6 +262,7 @@ export default function BlogSidebar({ onSelectBlog }: BlogSidebarProps) {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   className={`transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
+                  aria-hidden="true"
                 >
                   <path d="m15 18-6-6 6-6" />
                 </svg>
@@ -315,6 +324,7 @@ export default function BlogSidebar({ onSelectBlog }: BlogSidebarProps) {
                           <button
                             onClick={(e) => e.stopPropagation()}
                             className="p-1 rounded hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400"
+                            aria-label="More options"
                           >
                             <svg
                               width="16"
@@ -325,6 +335,7 @@ export default function BlogSidebar({ onSelectBlog }: BlogSidebarProps) {
                               strokeWidth="2"
                               strokeLinecap="round"
                               strokeLinejoin="round"
+                              aria-hidden="true"
                             >
                               <circle cx="12" cy="12" r="1" />
                               <circle cx="12" cy="5" r="1" />
@@ -376,6 +387,7 @@ export default function BlogSidebar({ onSelectBlog }: BlogSidebarProps) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 className="text-zinc-400"
+                aria-hidden="true"
               >
                 <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
               </svg>

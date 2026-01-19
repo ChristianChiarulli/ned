@@ -107,6 +107,7 @@ export default function LoginButton({ onLogin, onLogout }: LoginButtonProps) {
               strokeLinecap="round"
               strokeLinejoin="round"
               className="mr-2"
+              aria-hidden="true"
             >
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <polyline points="16 17 21 12 16 7" />
@@ -133,6 +134,7 @@ export default function LoginButton({ onLogin, onLogout }: LoginButtonProps) {
               className="animate-spin h-4 w-4"
               viewBox="0 0 24 24"
               fill="none"
+              aria-hidden="true"
             >
               <circle
                 className="opacity-25"
@@ -161,6 +163,7 @@ export default function LoginButton({ onLogin, onLogout }: LoginButtonProps) {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              aria-hidden="true"
             >
               <circle cx="12" cy="12" r="10" />
               <path d="M8 12h8" />
