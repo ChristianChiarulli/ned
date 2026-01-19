@@ -55,9 +55,9 @@ export default function DraftsPanel({ onSelectDraft, onClose }: DraftsPanelProps
   };
 
   return (
-    <div className="w-72 h-screen border-r border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 flex flex-col">
+    <div className="sticky top-0 w-72 h-screen border-r border-sidebar-border bg-sidebar flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-4 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex items-center justify-between px-3 py-3 border-b border-sidebar-border">
         <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
           Drafts
         </h2>
