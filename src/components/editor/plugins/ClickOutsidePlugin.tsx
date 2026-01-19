@@ -241,12 +241,15 @@ export default function ClickOutsidePlugin() {
           let currentOffset = 0;
           let foundNode: LexicalNode | null = null;
           let foundOffset = 0;
+          let targetLineBreakNode: LexicalNode | null = null;
 
           for (let i = 0; i < nodeChildren.length; i++) {
             const child = nodeChildren[i];
 
             if ($isLineBreakNode(child)) {
               if (currentOffset === targetLineOffset) {
+                // Remember this line break for empty line handling
+                targetLineBreakNode = child;
                 if (i > 0) {
                   const prevChild = nodeChildren[i - 1];
                   if ($isTextNode(prevChild) || $isCodeHighlightNode(prevChild)) {
@@ -272,6 +275,11 @@ export default function ClickOutsidePlugin() {
           if (foundNode && ($isTextNode(foundNode) || $isCodeHighlightNode(foundNode))) {
             selection.anchor.set(foundNode.getKey(), foundOffset, 'text');
             selection.focus.set(foundNode.getKey(), foundOffset, 'text');
+          } else if (targetLineBreakNode) {
+            // Empty line case: select at the line break position using element selection
+            const lineBreakIndex = targetLineBreakNode.getIndexWithinParent();
+            selection.anchor.set(targetNode.getKey(), lineBreakIndex, 'element');
+            selection.focus.set(targetNode.getKey(), lineBreakIndex, 'element');
           } else {
             // Fallback to first/last text child
             const textChildren = nodeChildren.filter(
