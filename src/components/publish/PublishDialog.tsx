@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,14 +11,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { useSettingsStore } from '@/lib/stores/settingsStore';
 import { publishArticle } from '@/lib/nostr/publish';
-import type { Blog } from '@/lib/nostr/types';
+import type { LinkedBlog } from '@/lib/stores/draftStore';
 
 interface PublishDialogProps {
   isOpen: boolean;
   onClose: () => void;
   getContent: () => string;
   onPublishSuccess?: () => void;
-  existingBlog?: Blog | null;
+  linkedBlog?: LinkedBlog;
 }
 
 interface RelayStatus {
@@ -27,7 +27,7 @@ interface RelayStatus {
   message?: string;
 }
 
-export default function PublishDialog({ isOpen, onClose, getContent, onPublishSuccess, existingBlog }: PublishDialogProps) {
+export default function PublishDialog({ isOpen, onClose, getContent, onPublishSuccess, linkedBlog }: PublishDialogProps) {
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
   const [image, setImage] = useState('');
@@ -39,7 +39,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
   const [error, setError] = useState<string | null>(null);
   const relays = useSettingsStore((state) => state.relays);
 
-  const isEditing = !!existingBlog;
+  const isEditing = !!linkedBlog;
 
   // Extract title from markdown content (first # heading)
   const extractTitleFromMarkdown = (markdown: string): string => {
@@ -47,14 +47,20 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
     return match ? match[1].trim() : '';
   };
 
-  // Reset form when dialog opens, pre-fill if editing
+  // Track if dialog was previously open to detect open transition
+  const wasOpenRef = useRef(false);
+
+  // Reset form only when dialog first opens (not when linkedBlog changes while open)
   useEffect(() => {
-    if (isOpen) {
-      if (existingBlog) {
-        setTitle(existingBlog.title);
-        setSummary(existingBlog.summary || '');
-        setImage(existingBlog.image || '');
-        setTags(existingBlog.tags || []);
+    const justOpened = isOpen && !wasOpenRef.current;
+    wasOpenRef.current = isOpen;
+
+    if (justOpened) {
+      if (linkedBlog) {
+        setTitle(linkedBlog.title || '');
+        setSummary(linkedBlog.summary || '');
+        setImage(linkedBlog.image || '');
+        setTags(linkedBlog.tags || []);
       } else {
         // Try to extract title from markdown content
         const content = getContent();
@@ -70,7 +76,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
       setRelayStatuses([]);
       setError(null);
     }
-  }, [isOpen, existingBlog, getContent]);
+  }, [isOpen, linkedBlog, getContent]);
 
   const handleAddTag = useCallback(() => {
     const trimmed = tagInput.trim().toLowerCase().replace(/^#/, '');
@@ -108,7 +114,7 @@ export default function PublishDialog({ isOpen, onClose, getContent, onPublishSu
         image: image.trim() || undefined,
         tags,
         relays,
-        dTag: existingBlog?.dTag, // Use existing d tag for edits
+        dTag: linkedBlog?.dTag, // Use existing d tag for edits
       });
 
       setRelayStatuses(

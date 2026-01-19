@@ -5,41 +5,123 @@ import { persist } from 'zustand/middleware';
 
 export type SaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved';
 
-interface DraftState {
+export interface LinkedBlog {
+  pubkey: string;
+  dTag: string;
+  // Metadata from original blog for pre-filling publish dialog
+  title?: string;
+  summary?: string;
+  image?: string;
+  tags?: string[];
+}
+
+export interface Draft {
+  id: string;
   content: string;
-  lastSaved: number | null;
+  lastSaved: number;
+  linkedBlog?: LinkedBlog;
+}
+
+interface DraftState {
+  drafts: Record<string, Draft>;
   saveStatus: SaveStatus;
 
-  setContent: (content: string) => void;
+  getDraft: (id: string) => Draft | undefined;
+  setDraftContent: (id: string, content: string) => void;
   setSaveStatus: (status: SaveStatus) => void;
-  markSaved: () => void;
-  clearDraft: () => void;
+  markSaved: (id: string) => void;
+  deleteDraft: (id: string) => void;
+  createDraft: () => string;
+  createDraftFromBlog: (content: string, linkedBlog: LinkedBlog) => string;
+  findDraftByLinkedBlog: (pubkey: string, dTag: string) => Draft | undefined;
+}
+
+function generateId(): string {
+  return crypto.randomUUID().slice(0, 8);
 }
 
 export const useDraftStore = create<DraftState>()(
   persist(
-    (set) => ({
-      content: '',
-      lastSaved: null,
+    (set, get) => ({
+      drafts: {},
       saveStatus: 'idle',
 
-      setContent: (content) => set({ content, saveStatus: 'unsaved' }),
+      getDraft: (id) => get().drafts[id],
+
+      setDraftContent: (id, content) => set((state) => ({
+        drafts: {
+          ...state.drafts,
+          [id]: {
+            ...state.drafts[id],
+            id,
+            content,
+            lastSaved: state.drafts[id]?.lastSaved ?? Date.now(),
+          },
+        },
+        saveStatus: 'unsaved',
+      })),
+
       setSaveStatus: (status) => set({ saveStatus: status }),
-      markSaved: () => set({
+
+      markSaved: (id) => set((state) => ({
+        drafts: {
+          ...state.drafts,
+          [id]: {
+            ...state.drafts[id],
+            id,
+            lastSaved: Date.now(),
+          },
+        },
         saveStatus: 'saved',
-        lastSaved: Date.now()
+      })),
+
+      deleteDraft: (id) => set((state) => {
+        const { [id]: _, ...rest } = state.drafts;
+        return { drafts: rest, saveStatus: 'idle' };
       }),
-      clearDraft: () => set({
-        content: '',
-        lastSaved: null,
-        saveStatus: 'idle'
-      }),
+
+      createDraft: () => {
+        const id = generateId();
+        set((state) => ({
+          drafts: {
+            ...state.drafts,
+            [id]: {
+              id,
+              content: '',
+              lastSaved: Date.now(),
+            },
+          },
+        }));
+        return id;
+      },
+
+      createDraftFromBlog: (content: string, linkedBlog: LinkedBlog) => {
+        const id = generateId();
+        set((state) => ({
+          drafts: {
+            ...state.drafts,
+            [id]: {
+              id,
+              content,
+              lastSaved: Date.now(),
+              linkedBlog,
+            },
+          },
+        }));
+        return id;
+      },
+
+      findDraftByLinkedBlog: (pubkey: string, dTag: string) => {
+        const drafts = get().drafts;
+        return Object.values(drafts).find(
+          (draft) => draft.linkedBlog?.pubkey === pubkey && draft.linkedBlog?.dTag === dTag
+        );
+      },
     }),
     {
-      name: 'ned-draft',
+      name: 'ned-drafts',
       partialize: (state) => ({
-        content: state.content,
-        lastSaved: state.lastSaved
+        drafts: state.drafts,
       }),
     }
   )

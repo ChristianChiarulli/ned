@@ -7,6 +7,78 @@ interface FetchBlogsOptions {
   relay?: string;
 }
 
+export async function fetchBlogByAddress({
+  pubkey,
+  identifier,
+  relay = 'wss://relay.damus.io',
+}: {
+  pubkey: string;
+  identifier: string;
+  relay?: string;
+}): Promise<Blog | null> {
+  return new Promise((resolve) => {
+    const ws = new WebSocket(relay);
+    const subId = `blog-addr-${Date.now()}`;
+    let timeoutId: NodeJS.Timeout;
+    let resolved = false;
+
+    ws.onopen = () => {
+      const filter = {
+        kinds: [30023],
+        authors: [pubkey],
+        '#d': [identifier],
+        limit: 1,
+      };
+
+      ws.send(JSON.stringify(['REQ', subId, filter]));
+
+      timeoutId = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          ws.send(JSON.stringify(['CLOSE', subId]));
+          ws.close();
+          resolve(null);
+        }
+      }, 10000);
+    };
+
+    ws.onmessage = (msg) => {
+      try {
+        const data = JSON.parse(msg.data);
+
+        if (data[0] === 'EVENT' && data[1] === subId) {
+          const event = data[2] as NostrEvent;
+          if (event.kind === 30023 && !resolved) {
+            resolved = true;
+            clearTimeout(timeoutId);
+            ws.send(JSON.stringify(['CLOSE', subId]));
+            ws.close();
+            resolve(eventToBlog(event));
+          }
+        } else if (data[0] === 'EOSE' && data[1] === subId) {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeoutId);
+            ws.send(JSON.stringify(['CLOSE', subId]));
+            ws.close();
+            resolve(null);
+          }
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    };
+
+    ws.onerror = () => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeoutId);
+        resolve(null);
+      }
+    };
+  });
+}
+
 export async function fetchBlogs({
   limit = 10,
   until,

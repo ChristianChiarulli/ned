@@ -5,12 +5,16 @@ import { useDraftStore } from '../stores/draftStore';
 
 const DEBOUNCE_MS = 1000;
 
-export function useDraftAutoSave() {
-  const { setContent, setSaveStatus, markSaved, saveStatus, content } = useDraftStore();
+export function useDraftAutoSave(draftId: string | null) {
+  const { setDraftContent, setSaveStatus, markSaved, saveStatus } = useDraftStore();
+  // Use a selector to properly subscribe to draft changes
+  const draft = useDraftStore((state) => draftId ? state.drafts[draftId] : undefined);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastContentRef = useRef<string>(content);
+  const lastContentRef = useRef<string>('');
 
   const handleContentChange = useCallback((newContent: string) => {
+    if (!draftId) return;
+
     // Skip if content hasn't changed
     if (newContent === lastContentRef.current) return;
     lastContentRef.current = newContent;
@@ -26,13 +30,20 @@ export function useDraftAutoSave() {
     // Debounce the actual save
     timeoutRef.current = setTimeout(() => {
       setSaveStatus('saving');
-      setContent(newContent);
-      markSaved();
+      setDraftContent(draftId, newContent);
+      markSaved(draftId);
 
       // Auto-hide "Saved" after 2 seconds
       setTimeout(() => setSaveStatus('idle'), 2000);
     }, DEBOUNCE_MS);
-  }, [setContent, setSaveStatus, markSaved]);
+  }, [draftId, setDraftContent, setSaveStatus, markSaved]);
+
+  // Update lastContentRef when draft changes
+  useEffect(() => {
+    if (draft) {
+      lastContentRef.current = draft.content;
+    }
+  }, [draft]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -43,5 +54,5 @@ export function useDraftAutoSave() {
     };
   }, []);
 
-  return { handleContentChange, saveStatus, savedContent: content };
+  return { handleContentChange, saveStatus, draft };
 }
