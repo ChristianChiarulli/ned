@@ -408,7 +408,7 @@ function HomeContent() {
               onChange={handleEditorChange}
               onProfileLookup={lookupProfile}
               onNoteLookup={lookupNote}
-              toolbarContainer={toolbarElement}
+              toolbarContainer={selectedBlog ? null : toolbarElement}
               readOnly={!!selectedBlog}
             />
           </div>
