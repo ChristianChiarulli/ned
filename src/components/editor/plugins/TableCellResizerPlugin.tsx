@@ -412,13 +412,15 @@ function TableCellResizer() {
 }
 
 export default function TableCellResizerPlugin() {
-  const [editor] = useLexicalComposerContext();
+  const [mounted, setMounted] = useState(false);
 
-  return useMemo(
-    () =>
-      typeof document !== 'undefined'
-        ? createPortal(<TableCellResizer />, document.body)
-        : null,
-    [editor],
-  );
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  return createPortal(<TableCellResizer />, document.body);
 }

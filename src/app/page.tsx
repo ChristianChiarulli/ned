@@ -219,7 +219,7 @@ function HomeContent() {
       )}
 
       <SidebarInset className="bg-zinc-50 dark:bg-zinc-950">
-        <header className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
+        <header className="sticky top-0 z-10 flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
           <div className="flex items-center gap-2 min-w-[100px]">
             <SaveStatusIndicator />
           </div>
