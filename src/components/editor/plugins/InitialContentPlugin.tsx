@@ -8,6 +8,7 @@ import {
   MULTILINE_ELEMENT_TRANSFORMERS,
   TEXT_FORMAT_TRANSFORMERS,
 } from '@lexical/markdown';
+import { $setSelection } from 'lexical';
 import { IMAGE } from '../transformers/ImageTransformer';
 import { LINK } from '../transformers/LinkTransformer';
 import { NOSTR_TRANSFORMERS } from '../transformers/NostrTransformers';
@@ -41,6 +42,13 @@ export default function InitialContentPlugin({ markdown }: InitialContentPluginP
 
     editor.update(() => {
       $convertFromMarkdownString(markdown, ALL_TRANSFORMERS, undefined, false);
+      // Clear selection to prevent autofocus from scrolling to cursor position
+      $setSelection(null);
+    });
+
+    // Scroll to top after content loads
+    requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
     });
   }, [editor, markdown]);
 

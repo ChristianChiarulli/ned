@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useImperativeHandle, forwardRef, useState, useCallback, useRef, useEffect } from 'react';
+import { useMemo, useImperativeHandle, forwardRef } from 'react';
 import { LexicalExtensionComposer } from '@lexical/react/LexicalExtensionComposer';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
@@ -9,13 +9,12 @@ import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin';
 import {
   $convertToMarkdownString,
-  $convertFromMarkdownString,
   ELEMENT_TRANSFORMERS,
   MULTILINE_ELEMENT_TRANSFORMERS,
   TEXT_FORMAT_TRANSFORMERS,
 } from '@lexical/markdown';
-import { defineExtension, $getRoot } from 'lexical';
-import type { EditorState, LexicalEditor } from 'lexical';
+import { defineExtension } from 'lexical';
+import type { EditorState } from 'lexical';
 
 import { EditorContext, type ProfileLookupFn, type NoteLookupFn } from './context/EditorContext';
 
@@ -85,7 +84,7 @@ const ALL_TRANSFORMERS = [
 // Set transformers for table cell content parsing
 setTableTransformers(ALL_TRANSFORMERS as any);
 
-// Inner component to access editor context and handle raw mode
+// Inner component to access editor context
 function EditorInner({
   editorRef,
   placeholder,
@@ -100,15 +99,9 @@ function EditorInner({
   initialMarkdown?: string;
 }) {
   const [editor] = useLexicalComposerContext();
-  const [isRawMode, setIsRawMode] = useState(false);
-  const [rawMarkdown, setRawMarkdown] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useImperativeHandle(editorRef, () => ({
     getMarkdown: () => {
-      if (isRawMode) {
-        return rawMarkdown;
-      }
       let markdown = '';
       editor.getEditorState().read(() => {
         markdown = $convertToMarkdownString(ALL_TRANSFORMERS, undefined, false);
@@ -117,65 +110,18 @@ function EditorInner({
     },
   }));
 
-  const handleToggleRawMode = useCallback(() => {
-    if (isRawMode) {
-      // Switching from raw to rich: parse markdown into editor
-      editor.update(() => {
-        $convertFromMarkdownString(rawMarkdown, ALL_TRANSFORMERS, undefined, false);
-      });
-      setIsRawMode(false);
-    } else {
-      // Switching from rich to raw: get markdown from editor
-      editor.getEditorState().read(() => {
-        const markdown = $convertToMarkdownString(ALL_TRANSFORMERS, undefined, false);
-        setRawMarkdown(markdown);
-      });
-      setIsRawMode(true);
-    }
-  }, [editor, isRawMode, rawMarkdown]);
-
-  // Focus textarea when switching to raw mode
-  useEffect(() => {
-    if (isRawMode && textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, [isRawMode]);
-
-  // Handle raw markdown changes and trigger onChange
-  const handleRawChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newMarkdown = e.target.value;
-    setRawMarkdown(newMarkdown);
-
-    // Update editor state in background so onChange fires
-    if (onChange) {
-      editor.update(() => {
-        $convertFromMarkdownString(newMarkdown, ALL_TRANSFORMERS, undefined, false);
-      });
-    }
-  }, [editor, onChange]);
-
   return (
     <>
       <LexicalErrorBoundary onError={(error) => console.error('Lexical error:', error)}>
-        {isRawMode ? (
-          <textarea
-            ref={textareaRef}
-            value={rawMarkdown}
-            onChange={handleRawChange}
-            className="min-h-full flex-auto px-4 py-8 pb-[30%] outline-none text-zinc-900 dark:text-zinc-100 bg-transparent resize-none font-mono text-sm"
-            placeholder={placeholder}
-          />
-        ) : (
-          <ContentEditable
-            className="min-h-full flex-auto px-4 py-8 pb-[30%] outline-none text-zinc-900 dark:text-zinc-100 font-[family-name:var(--font-source-serif-4)] text-lg leading-relaxed"
-            aria-placeholder={placeholder}
-            placeholder={
-              <div className="absolute top-8 left-4 text-zinc-400 dark:text-zinc-500 pointer-events-none select-none font-[family-name:var(--font-source-serif-4)]">
-                {placeholder}
-              </div>
-            }
-          />
-        )}
+        <ContentEditable
+          className="min-h-full flex-auto px-4 py-8 pb-[30%] outline-none text-zinc-900 dark:text-zinc-100 font-[family-name:var(--font-source-serif-4)] text-lg leading-relaxed"
+          aria-placeholder={placeholder}
+          placeholder={
+            <div className="absolute top-8 left-4 text-zinc-400 dark:text-zinc-500 pointer-events-none select-none font-[family-name:var(--font-source-serif-4)]">
+              {placeholder}
+            </div>
+          }
+        />
       </LexicalErrorBoundary>
       {onChange && (
         <OnChangePlugin
@@ -185,8 +131,6 @@ function EditorInner({
       {toolbarContainer && (
         <ToolbarPlugin
           portalContainer={toolbarContainer}
-          isRawMode={isRawMode}
-          onToggleRawMode={handleToggleRawMode}
         />
       )}
       <ClickOutsidePlugin />
