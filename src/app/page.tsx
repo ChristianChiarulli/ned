@@ -166,7 +166,6 @@ function HomeContent() {
 
   const handleSelectDraft = useCallback((draftId: string) => {
     router.push(`/?draft=${draftId}`);
-    setActivePanel(null);
   }, [router]);
 
   const isLoggedIn = isHydrated && !!pubkey;
