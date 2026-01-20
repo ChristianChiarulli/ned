@@ -182,13 +182,54 @@ function HomeContent() {
   const linkedBlogKey = draft?.linkedBlog ? `${draft.linkedBlog.pubkey}:${draft.linkedBlog.dTag}` : null;
   const editorKey = blogIdentityKey || linkedBlogKey || currentDraftId || 'new';
 
+  // Normalize content for comparison - ignore insignificant differences
+  const normalizeForComparison = (content: string) => {
+    return content
+      .replace(/\r\n/g, '\n')       // Normalize line endings
+      .replace(/\u00A0/g, ' ')      // Non-breaking space to regular space
+      .replace(/[ \t]+$/gm, '')     // Trim trailing whitespace from each line
+      .replace(/\n{3,}/g, '\n\n')   // Collapse 3+ newlines to 2
+      .replace(/\n\n([-*])/g, '\n$1') // Normalize blank line before list to single newline
+      .replace(/\\\\/g, '\\')       // Normalize double backslashes to single
+      .replace(/\\_/g, '_')         // Unescape underscores (editor over-escapes)
+      .replace(/\\\*/g, '*')        // Unescape asterisks
+      .replace(/\\\./g, '.')        // Unescape periods
+      .trim();                       // Remove leading/trailing whitespace
+  };
+
   // Handle first edit on a blog - create draft and redirect
   const handleEditorChange = useCallback(() => {
     const markdown = editorRef.current?.getMarkdown() ?? '';
 
     if (selectedBlog) {
       // Only create draft if content actually changed from the original
-      if (markdown !== selectedBlog.content) {
+      // Normalize both to ignore newline-only differences
+      const normalizedOriginal = normalizeForComparison(selectedBlog.content);
+      const normalizedEditor = normalizeForComparison(markdown);
+
+      if (normalizedEditor !== normalizedOriginal) {
+        // DEBUG: Log what triggered the draft creation
+        console.group('Draft created from blog view');
+        console.log('Blog title:', selectedBlog.title);
+        console.log('Original length:', selectedBlog.content.length, '| Normalized:', normalizedOriginal.length);
+        console.log('Editor length:', markdown.length, '| Normalized:', normalizedEditor.length);
+        console.log('--- Normalized original ---');
+        console.log(JSON.stringify(normalizedOriginal));
+        console.log('--- Normalized editor ---');
+        console.log(JSON.stringify(normalizedEditor));
+        // Find first difference
+        for (let i = 0; i < Math.max(normalizedOriginal.length, normalizedEditor.length); i++) {
+          if (normalizedOriginal[i] !== normalizedEditor[i]) {
+            console.log(`First difference at index ${i}:`);
+            console.log(`  Original char: ${JSON.stringify(normalizedOriginal[i])} (code: ${normalizedOriginal.charCodeAt(i)})`);
+            console.log(`  Editor char: ${JSON.stringify(normalizedEditor[i])} (code: ${normalizedEditor.charCodeAt(i)})`);
+            console.log(`  Context original: ${JSON.stringify(normalizedOriginal.slice(Math.max(0, i - 20), i + 20))}`);
+            console.log(`  Context editor: ${JSON.stringify(normalizedEditor.slice(Math.max(0, i - 20), i + 20))}`);
+            break;
+          }
+        }
+        console.groupEnd();
+
         const draftId = createDraftFromBlog(markdown, {
           pubkey: selectedBlog.pubkey,
           dTag: selectedBlog.dTag,
