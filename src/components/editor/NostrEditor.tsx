@@ -54,6 +54,7 @@ import { TABLE, setTableTransformers } from './transformers/TableTransformer';
 import { HORIZONTAL_RULE } from './transformers/HorizontalRuleTransformer';
 import TableActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizerPlugin from './plugins/TableCellResizerPlugin';
+import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 
 interface NostrEditorProps {
   placeholder?: string;
@@ -199,6 +200,7 @@ function EditorInner({
       <MarkdownShortcutPlugin transformers={ALL_TRANSFORMERS} />
       <TableActionMenuPlugin />
       <TableCellResizerPlugin />
+      <CodeHighlightPlugin />
     </>
   );
 }
