@@ -449,9 +449,18 @@ interface TableActionMenuPluginProps {
 }
 
 export default function TableActionMenuPlugin({
-  anchorElem = typeof document !== 'undefined' ? document.body : (null as unknown as HTMLElement),
+  anchorElem,
 }: TableActionMenuPluginProps) {
-  return anchorElem
-    ? createPortal(<TableCellActionMenuContainer anchorElem={anchorElem} />, anchorElem)
-    : null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  const target = anchorElem ?? document.body;
+  return createPortal(<TableCellActionMenuContainer anchorElem={target} />, target);
 }
