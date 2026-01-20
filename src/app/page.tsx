@@ -35,6 +35,13 @@ function HomeContent() {
   const pubkey = useAuthStore((state) => state.pubkey);
   const relays = useSettingsStore((state) => state.relays);
   const editorRef = useRef<NostrEditorHandle>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [toolbarElement, setToolbarElement] = useState<HTMLDivElement | null>(null);
+
+  // Connect toolbar ref to state once after mount
+  useEffect(() => {
+    setToolbarElement(toolbarRef.current);
+  }, []);
   const queryClient = useQueryClient();
 
   // Get draft ID from URL or create new one
@@ -169,7 +176,9 @@ function HomeContent() {
 
   // Determine editor content and key
   const editorContent = selectedBlog ? selectedBlog.content : (draft?.content ?? '');
-  const editorKey = selectedBlog?.id || currentDraftId || 'new';
+  // Use linked blog info as key if available to prevent remount when transitioning from blog to draft
+  const linkedBlogKey = draft?.linkedBlog ? `${draft.linkedBlog.pubkey}:${draft.linkedBlog.dTag}` : null;
+  const editorKey = linkedBlogKey || selectedBlog?.id || currentDraftId || 'new';
 
   // Handle first edit on a blog - create draft and redirect
   const handleEditorChange = useCallback(() => {
@@ -211,8 +220,11 @@ function HomeContent() {
 
       <SidebarInset className="bg-zinc-50 dark:bg-zinc-950">
         <header className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
-          <SaveStatusIndicator />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-[100px]">
+            <SaveStatusIndicator />
+          </div>
+          <div ref={toolbarRef} className="flex items-center justify-center" />
+          <div className="flex items-center gap-2 justify-end min-w-[100px]">
             {isLoggedIn && (
               <Button
                 size="sm"
@@ -240,6 +252,7 @@ function HomeContent() {
               onChange={handleEditorChange}
               onProfileLookup={lookupProfile}
               onNoteLookup={lookupNote}
+              toolbarContainer={toolbarElement}
             />
           </div>
           )}

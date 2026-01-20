@@ -30,6 +30,7 @@ import {
 } from '@lexical/extension';
 
 import theme from './themes/default';
+import ToolbarPlugin from './plugins/ToolbarPlugin';
 import ClickOutsidePlugin from './plugins/ClickOutsidePlugin';
 import ScrollCenterCurrentLinePlugin from './plugins/ScrollCenterCurrentLinePlugin';
 import ListBackspacePlugin from './plugins/ListBackspacePlugin';
@@ -55,6 +56,7 @@ interface NostrEditorProps {
   initialMarkdown?: string;
   onProfileLookup?: ProfileLookupFn;
   onNoteLookup?: NoteLookupFn;
+  toolbarContainer?: HTMLElement | null;
 }
 
 export interface NostrEditorHandle {
@@ -92,10 +94,11 @@ const NostrEditor = forwardRef<NostrEditorHandle, NostrEditorProps>(function Nos
   {
     placeholder = 'Start writing...',
     onChange,
-    autoFocus = true,
+    autoFocus = false,
     initialMarkdown,
     onProfileLookup,
     onNoteLookup,
+    toolbarContainer,
   },
   ref
 ) {
@@ -147,6 +150,7 @@ const NostrEditor = forwardRef<NostrEditorHandle, NostrEditorProps>(function Nos
               />
             )}
             <EditorRefPlugin editorRef={ref as React.RefObject<NostrEditorHandle | null>} />
+            {toolbarContainer && <ToolbarPlugin portalContainer={toolbarContainer} />}
             <ClickOutsidePlugin />
             <ImagePastePlugin />
             <LinkPastePlugin />
