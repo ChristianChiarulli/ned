@@ -58,12 +58,12 @@ export default function AppSidebar({ activePanel, onPanelChange, onNewArticle }:
 
   return (
     <Sidebar collapsible="icon" className="border-r border-zinc-200 dark:border-zinc-800">
-      <SidebarHeader className="border-b border-sidebar-border">
+      <SidebarHeader className="border-b border-sidebar-border p-0.5">
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-2 px-2 py-1 cursor-default">
+            <div className="flex items-center gap-2 px-3 py-3 cursor-default">
               <ServerIcon className="w-4 h-4 text-purple-500 flex-shrink-0" />
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 truncate">
                 {relayHost || 'No relay'}
               </span>
             </div>
