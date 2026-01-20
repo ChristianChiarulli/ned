@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileTextIcon, FileEditIcon, SettingsIcon, PlusIcon, SunIcon, MoonIcon, GlobeIcon } from 'lucide-react';
+import { FileTextIcon, FileEditIcon, ServerIcon, PlusIcon, SunIcon, MoonIcon, GlobeIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import {
   Sidebar,
@@ -68,12 +68,12 @@ export default function AppSidebar({ activePanel, onPanelChange, onNewArticle }:
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  tooltip="Blogs"
+                  tooltip="My Blogs"
                   isActive={activePanel === 'blogs'}
                   onClick={() => handleClick('blogs')}
                 >
                   <FileTextIcon />
-                  <span>Blogs</span>
+                  <span>My Blogs</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
@@ -88,12 +88,12 @@ export default function AppSidebar({ activePanel, onPanelChange, onNewArticle }:
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  tooltip="Settings"
-                  isActive={activePanel === 'settings'}
-                  onClick={() => handleClick('settings')}
+                  tooltip="Relays"
+                  isActive={activePanel === 'relays'}
+                  onClick={() => handleClick('relays')}
                 >
-                  <SettingsIcon />
-                  <span>Settings</span>
+                  <ServerIcon />
+                  <span>Relays</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

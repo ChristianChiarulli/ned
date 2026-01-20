@@ -28,7 +28,7 @@ function truncateNpub(pubkey: string): string {
 
 export default function GlobalFeedPanel({ onSelectBlog, onClose }: GlobalFeedPanelProps) {
   const [isHydrated, setIsHydrated] = useState(false);
-  const relays = useSettingsStore((state) => state.relays);
+  const activeRelay = useSettingsStore((state) => state.activeRelay);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -42,11 +42,11 @@ export default function GlobalFeedPanel({ onSelectBlog, onClose }: GlobalFeedPan
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: ['global-feed', relays[0]],
-    queryFn: ({ pageParam }) => fetchBlogs({ limit: 20, until: pageParam, relay: relays[0] }),
+    queryKey: ['global-feed', activeRelay],
+    queryFn: ({ pageParam }) => fetchBlogs({ limit: 20, until: pageParam, relay: activeRelay }),
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    enabled: isHydrated && relays.length > 0,
+    enabled: isHydrated && !!activeRelay,
   });
 
   const blogs = data?.pages.flatMap((page) => page.blogs) ?? [];

@@ -40,6 +40,7 @@ export default function BlogListPanel({ onSelectBlog, onClose }: BlogListPanelPr
   const [deletingBlogId, setDeletingBlogId] = useState<string | null>(null);
   const pubkey = useAuthStore((state) => state.pubkey);
   const relays = useSettingsStore((state) => state.relays);
+  const activeRelay = useSettingsStore((state) => state.activeRelay);
   const queryClient = useQueryClient();
   const findDraftByLinkedBlog = useDraftStore((state) => state.findDraftByLinkedBlog);
 
@@ -55,11 +56,11 @@ export default function BlogListPanel({ onSelectBlog, onClose }: BlogListPanelPr
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: ['blogs', pubkey, relays[0]],
-    queryFn: ({ pageParam }) => fetchBlogs({ limit: 10, until: pageParam, pubkey: pubkey ?? undefined, relay: relays[0] }),
+    queryKey: ['blogs', pubkey, activeRelay],
+    queryFn: ({ pageParam }) => fetchBlogs({ limit: 10, until: pageParam, pubkey: pubkey ?? undefined, relay: activeRelay }),
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    enabled: isHydrated && !!pubkey && relays.length > 0,
+    enabled: isHydrated && !!pubkey && !!activeRelay,
   });
 
   const blogs = data?.pages.flatMap((page) => page.blogs) ?? [];

@@ -11,24 +11,33 @@ const DEFAULT_RELAYS = [
 
 interface SettingsState {
   relays: string[];
+  activeRelay: string;
   addRelay: (relay: string) => void;
   removeRelay: (relay: string) => void;
+  setActiveRelay: (relay: string) => void;
   resetRelays: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       relays: DEFAULT_RELAYS,
+      activeRelay: DEFAULT_RELAYS[0],
       addRelay: (relay) =>
         set((state) => ({
           relays: state.relays.includes(relay) ? state.relays : [...state.relays, relay],
         })),
       removeRelay: (relay) =>
-        set((state) => ({
-          relays: state.relays.filter((r) => r !== relay),
-        })),
-      resetRelays: () => set({ relays: DEFAULT_RELAYS }),
+        set((state) => {
+          const newRelays = state.relays.filter((r) => r !== relay);
+          // If removing the active relay, set active to first remaining relay
+          const newActiveRelay = state.activeRelay === relay
+            ? (newRelays[0] || '')
+            : state.activeRelay;
+          return { relays: newRelays, activeRelay: newActiveRelay };
+        }),
+      setActiveRelay: (relay) => set({ activeRelay: relay }),
+      resetRelays: () => set({ relays: DEFAULT_RELAYS, activeRelay: DEFAULT_RELAYS[0] }),
     }),
     {
       name: 'ned-settings',

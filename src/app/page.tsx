@@ -35,6 +35,7 @@ function HomeContent() {
   const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
   const pubkey = useAuthStore((state) => state.pubkey);
   const relays = useSettingsStore((state) => state.relays);
+  const activeRelay = useSettingsStore((state) => state.activeRelay);
   const editorRef = useRef<NostrEditorHandle>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [toolbarElement, setToolbarElement] = useState<HTMLDivElement | null>(null);
@@ -87,7 +88,7 @@ function HomeContent() {
         // Load blog without creating a draft
         setCurrentDraftId(null);
         setIsLoadingBlog(true);
-        const relay = naddrData.relays[0] || relays[0];
+        const relay = naddrData.relays[0] || activeRelay;
         fetchBlogByAddress({
           pubkey: naddrData.pubkey,
           identifier: naddrData.identifier,
@@ -218,7 +219,7 @@ function HomeContent() {
       <div className={activePanel === 'drafts' ? '' : 'hidden'}>
         <DraftsPanel onSelectDraft={handleSelectDraft} onClose={handleClosePanel} />
       </div>
-      {activePanel === 'settings' && (
+      {activePanel === 'relays' && (
         <SettingsPanel onClose={handleClosePanel} />
       )}
 

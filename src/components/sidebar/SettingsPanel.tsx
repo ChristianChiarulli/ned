@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { XIcon } from 'lucide-react';
+import { XIcon, CheckIcon } from 'lucide-react';
 import { useSettingsStore } from '@/lib/stores/settingsStore';
 import { Button } from '@/components/ui/button';
 
@@ -10,7 +10,7 @@ interface SettingsPanelProps {
 }
 
 export default function SettingsPanel({ onClose }: SettingsPanelProps) {
-  const { relays, addRelay, removeRelay } = useSettingsStore();
+  const { relays, activeRelay, addRelay, removeRelay, setActiveRelay } = useSettingsStore();
   const [newRelay, setNewRelay] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -41,7 +41,7 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-3 border-b border-sidebar-border">
         <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          Settings
+          Relays
         </h2>
         <button
           onClick={onClose}
@@ -53,32 +53,45 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
         </button>
       </div>
 
-      {/* Settings Content */}
+      {/* Relays Content */}
       <div className="flex-1 overflow-y-auto p-3">
         <div className="space-y-4">
           <div>
-            <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-2">
-              Relays
-            </h3>
             <ul className="space-y-1">
-              {relays.map((relay) => (
-                <li
-                  key={relay}
-                  className="flex items-center justify-between gap-2 p-2 bg-zinc-200 dark:bg-zinc-800 rounded text-xs"
-                >
-                  <span className="text-zinc-700 dark:text-zinc-300 truncate flex-1">
-                    {relay}
-                  </span>
-                  <button
-                    onClick={() => removeRelay(relay)}
-                    className="p-1 rounded hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400"
-                    title="Remove relay"
-                    aria-label="Remove relay"
+              {relays.map((relay) => {
+                const isActive = relay === activeRelay;
+                return (
+                  <li
+                    key={relay}
+                    className={`flex items-center justify-between gap-2 p-2 rounded text-xs cursor-pointer transition-colors ${
+                      isActive
+                        ? 'bg-purple-100 dark:bg-purple-900/30 border border-purple-300 dark:border-purple-700'
+                        : 'bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700'
+                    }`}
+                    onClick={() => setActiveRelay(relay)}
                   >
-                    <XIcon className="w-3 h-3" />
-                  </button>
-                </li>
-              ))}
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {isActive && (
+                        <CheckIcon className="w-3 h-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                      )}
+                      <span className={`truncate ${isActive ? 'text-purple-700 dark:text-purple-300' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                        {relay}
+                      </span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeRelay(relay);
+                      }}
+                      className="p-1 rounded hover:bg-zinc-400/50 dark:hover:bg-zinc-600/50 text-zinc-500 dark:text-zinc-400 flex-shrink-0"
+                      title="Remove relay"
+                      aria-label="Remove relay"
+                    >
+                      <XIcon className="w-3 h-3" />
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
