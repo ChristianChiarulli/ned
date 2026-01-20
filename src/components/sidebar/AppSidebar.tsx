@@ -1,6 +1,7 @@
 'use client';
 
-import { FileTextIcon, FileEditIcon, SettingsIcon, PlusIcon, SunIcon, MoonIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { FileTextIcon, FileEditIcon, SettingsIcon, PlusIcon, SunIcon, MoonIcon, GlobeIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import {
   Sidebar,
@@ -24,6 +25,11 @@ interface AppSidebarProps {
 
 export default function AppSidebar({ activePanel, onPanelChange, onNewArticle }: AppSidebarProps) {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleClick = (panel: string) => {
     onPanelChange(activePanel === panel ? null : panel);
@@ -50,6 +56,16 @@ export default function AppSidebar({ activePanel, onPanelChange, onNewArticle }:
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Explore"
+                  isActive={activePanel === 'explore'}
+                  onClick={() => handleClick('explore')}
+                >
+                  <GlobeIcon />
+                  <span>Explore</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   tooltip="Blogs"
@@ -87,9 +103,12 @@ export default function AppSidebar({ activePanel, onPanelChange, onNewArticle }:
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={toggleTheme}>
-              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-              <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+            <SidebarMenuButton
+              tooltip={mounted ? (theme === 'dark' ? 'Light mode' : 'Dark mode') : 'Toggle theme'}
+              onClick={toggleTheme}
+            >
+              {mounted ? (theme === 'dark' ? <SunIcon /> : <MoonIcon />) : <MoonIcon />}
+              <span>{mounted ? (theme === 'dark' ? 'Light mode' : 'Dark mode') : 'Toggle theme'}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

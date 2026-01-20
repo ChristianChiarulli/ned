@@ -9,6 +9,7 @@ import AppSidebar from '@/components/sidebar/AppSidebar';
 import BlogListPanel from '@/components/sidebar/BlogListPanel';
 import DraftsPanel from '@/components/sidebar/DraftsPanel';
 import SettingsPanel from '@/components/sidebar/SettingsPanel';
+import GlobalFeedPanel from '@/components/sidebar/GlobalFeedPanel';
 import LoginButton from '@/components/auth/LoginButton';
 import PublishDialog from '@/components/publish/PublishDialog';
 import { SaveStatusIndicator } from '@/components/SaveStatusIndicator';
@@ -170,8 +171,8 @@ function HomeContent() {
 
   const isLoggedIn = isHydrated && !!pubkey;
 
-  // Determine if we're editing an existing blog (either via draft with linkedBlog or viewing a blog directly)
-  const isEditing = !!draft?.linkedBlog || !!selectedBlog;
+  // Determine if we're editing an existing blog (only when we have a draft with actual edits)
+  const isEditing = !!draft?.linkedBlog;
 
   // Determine editor content and key
   const editorContent = selectedBlog ? selectedBlog.content : (draft?.content ?? '');
@@ -208,6 +209,9 @@ function HomeContent() {
       <AppSidebar activePanel={activePanel} onPanelChange={setActivePanel} onNewArticle={handleNewArticle} />
 
       {/* Collapsible panels */}
+      {activePanel === 'explore' && (
+        <GlobalFeedPanel onSelectBlog={handleSelectBlog} onClose={handleClosePanel} />
+      )}
       {activePanel === 'blogs' && (
         <BlogListPanel onSelectBlog={handleSelectBlog} onClose={handleClosePanel} />
       )}
@@ -225,7 +229,7 @@ function HomeContent() {
           </div>
           <div ref={toolbarRef} className="flex items-center justify-center" />
           <div className="flex items-center gap-2 justify-end min-w-[100px]">
-            {isLoggedIn && (
+            {isLoggedIn && currentDraftId && (
               <Button
                 size="sm"
                 variant={isEditing ? 'success' : 'default'}
