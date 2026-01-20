@@ -6,6 +6,7 @@ import { XIcon } from 'lucide-react';
 import { fetchBlogs } from '@/lib/nostr/fetch';
 import { useSettingsStore } from '@/lib/stores/settingsStore';
 import { Button } from '@/components/ui/button';
+import { extractFirstImage } from '@/lib/utils/markdown';
 import type { Blog } from '@/lib/nostr/types';
 
 interface GlobalFeedPanelProps {
@@ -68,7 +69,7 @@ export default function GlobalFeedPanel({ onSelectBlog, onClose }: GlobalFeedPan
       </div>
 
       {/* Blog List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overscroll-contain">
         {isLoading && (
           <div className="p-4 text-center text-zinc-500 dark:text-zinc-400 text-sm">
             Loading blogs...
@@ -88,28 +89,40 @@ export default function GlobalFeedPanel({ onSelectBlog, onClose }: GlobalFeedPan
         )}
 
         <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
-          {blogs.map((blog) => (
-            <li key={blog.id}>
-              <button
-                onClick={() => onSelectBlog?.(blog)}
-                className="w-full text-left p-3 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
-              >
-                <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                  {blog.title || 'Untitled'}
-                </h3>
-                {blog.summary && (
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
-                    {blog.summary}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 mt-2 text-xs text-zinc-400 dark:text-zinc-500">
-                  <span>{truncateNpub(blog.pubkey)}</span>
-                  <span>&middot;</span>
-                  <span>{formatDate(blog.publishedAt || blog.createdAt)}</span>
-                </div>
-              </button>
-            </li>
-          ))}
+          {blogs.map((blog) => {
+            const thumbnail = blog.image || extractFirstImage(blog.content);
+            return (
+              <li key={blog.id}>
+                <button
+                  onClick={() => onSelectBlog?.(blog)}
+                  className="w-full text-left p-3 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <div>
+                    <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                      {blog.title || 'Untitled'}
+                    </h3>
+                    {blog.summary && (
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
+                        {blog.summary}
+                      </p>
+                    )}
+                    {thumbnail && (
+                      <img
+                        src={thumbnail}
+                        alt=""
+                        className="w-2/3 h-24 rounded object-cover mt-2"
+                      />
+                    )}
+                    <div className="flex items-center gap-2 mt-2 text-xs text-zinc-400 dark:text-zinc-500">
+                      <span>{truncateNpub(blog.pubkey)}</span>
+                      <span>&middot;</span>
+                      <span>{formatDate(blog.publishedAt || blog.createdAt)}</span>
+                    </div>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
         </ul>
 
         {/* Load More Button */}

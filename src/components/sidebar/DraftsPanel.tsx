@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { XIcon, FileEditIcon, Trash2Icon, PenLineIcon } from 'lucide-react';
 import { useDraftStore, type Draft } from '@/lib/stores/draftStore';
+import { extractFirstImage } from '@/lib/utils/markdown';
 
 interface DraftsPanelProps {
   onSelectDraft?: (draftId: string) => void;
@@ -41,10 +42,6 @@ export default function DraftsPanel({ onSelectDraft, onClose }: DraftsPanelProps
   const drafts = useDraftStore((state) => state.drafts);
   const deleteDraft = useDraftStore((state) => state.deleteDraft);
 
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
-
   // Convert drafts object to sorted array (most recent first)
   // Keep linked drafts (edits to published blogs) even if empty
   const draftsList: Draft[] = Object.values(drafts)
@@ -52,6 +49,10 @@ export default function DraftsPanel({ onSelectDraft, onClose }: DraftsPanelProps
     .sort((a, b) => b.lastSaved - a.lastSaved);
 
   const hasDrafts = isHydrated && draftsList.length > 0;
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const handleDelete = (draftId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -78,7 +79,7 @@ export default function DraftsPanel({ onSelectDraft, onClose }: DraftsPanelProps
       </div>
 
       {/* Drafts List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overscroll-contain">
         {!isHydrated && (
           <div className="p-4 text-center text-zinc-500 dark:text-zinc-400 text-sm">
             Loading...
@@ -98,30 +99,40 @@ export default function DraftsPanel({ onSelectDraft, onClose }: DraftsPanelProps
             {draftsList.map((draft) => {
               const { title, preview } = extractPreview(draft.content);
               const isLinked = !!draft.linkedBlog;
+              const thumbnail = extractFirstImage(draft.content);
               return (
                 <li key={draft.id} className="relative group">
                   <button
                     onClick={() => onSelectDraft?.(draft.id)}
                     className="w-full text-left p-3 pr-10 hover:bg-sidebar-accent transition-colors"
                   >
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                        {title}
-                      </h3>
-                      {isLinked && (
-                        <span className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded" title="Editing published article">
-                          <PenLineIcon className="w-3 h-3" />
-                          Editing
-                        </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                          {title}
+                        </h3>
+                        {isLinked && (
+                          <span className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded" title="Editing published article">
+                            <PenLineIcon className="w-3 h-3" />
+                            Editing
+                          </span>
+                        )}
+                      </div>
+                      {preview && (
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
+                          {preview}
+                        </p>
                       )}
-                    </div>
-                    {preview && (
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
-                        {preview}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2 text-xs text-zinc-400 dark:text-zinc-500">
-                      <span>Last saved {formatDate(draft.lastSaved)}</span>
+                      {thumbnail && (
+                        <img
+                          src={thumbnail}
+                          alt=""
+                          className="w-2/3 h-24 rounded object-cover mt-2"
+                        />
+                      )}
+                      <div className="flex items-center gap-2 mt-2 text-xs text-zinc-400 dark:text-zinc-500">
+                        <span>Last saved {formatDate(draft.lastSaved)}</span>
+                      </div>
                     </div>
                   </button>
                   <button

@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { extractFirstImage } from '@/lib/utils/markdown';
 import type { Blog } from '@/lib/nostr/types';
 
 interface BlogListPanelProps {
@@ -84,7 +85,7 @@ export default function BlogListPanel({ onSelectBlog, onClose }: BlogListPanelPr
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-3 border-b border-sidebar-border">
         <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          Blogs
+          My Blogs
         </h2>
         <button
           onClick={onClose}
@@ -97,7 +98,7 @@ export default function BlogListPanel({ onSelectBlog, onClose }: BlogListPanelPr
       </div>
 
       {/* Blog List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overscroll-contain">
         {!isLoggedIn && (
           <div className="p-4 text-center text-zinc-500 dark:text-zinc-400 text-sm">
             <p>Sign in to see your blogs here.</p>
@@ -125,32 +126,42 @@ export default function BlogListPanel({ onSelectBlog, onClose }: BlogListPanelPr
         <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
           {blogs.map((blog) => {
             const hasDraftEdit = !!findDraftByLinkedBlog(blog.pubkey, blog.dTag);
+            const thumbnail = blog.image || extractFirstImage(blog.content);
             return (
             <li key={blog.id} className="relative group">
               <button
                 onClick={() => onSelectBlog?.(blog)}
                 className="w-full text-left p-3 pr-10 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
               >
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                    {blog.title}
-                  </h3>
-                  {hasDraftEdit && (
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded" title="Has unpublished edits">
-                      <PenLineIcon className="w-3 h-3" />
-                      Editing
-                    </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                      {blog.title}
+                    </h3>
+                    {hasDraftEdit && (
+                      <span className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded" title="Has unpublished edits">
+                        <PenLineIcon className="w-3 h-3" />
+                        Editing
+                      </span>
+                    )}
+                  </div>
+                  {blog.summary && (
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
+                      {blog.summary}
+                    </p>
                   )}
-                </div>
-                {blog.summary && (
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
-                    {blog.summary}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 mt-2 text-xs text-zinc-400 dark:text-zinc-500">
-                  <span>{truncateNpub(blog.pubkey)}</span>
-                  <span>&middot;</span>
-                  <span>{formatDate(blog.publishedAt || blog.createdAt)}</span>
+                  {thumbnail && (
+                    <img
+                      src={thumbnail}
+                      alt=""
+                      className="w-2/3 h-24 rounded object-cover mt-2"
+                    />
+                  )}
+                  <div className="flex items-center gap-2 mt-2 text-xs text-zinc-400 dark:text-zinc-500">
+                    <span>{truncateNpub(blog.pubkey)}</span>
+                    <span>&middot;</span>
+                    <span>{formatDate(blog.publishedAt || blog.createdAt)}</span>
+                  </div>
                 </div>
               </button>
               <div className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity">

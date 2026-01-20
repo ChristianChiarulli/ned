@@ -205,19 +205,19 @@ function HomeContent() {
   }, [selectedBlog, currentDraftId, createDraftFromBlog, router, handleContentChange]);
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <AppSidebar activePanel={activePanel} onPanelChange={setActivePanel} onNewArticle={handleNewArticle} />
 
-      {/* Collapsible panels */}
-      {activePanel === 'explore' && (
+      {/* Collapsible panels - kept mounted to preserve scroll position */}
+      <div className={activePanel === 'explore' ? '' : 'hidden'}>
         <GlobalFeedPanel onSelectBlog={handleSelectBlog} onClose={handleClosePanel} />
-      )}
-      {activePanel === 'blogs' && (
+      </div>
+      <div className={activePanel === 'blogs' ? '' : 'hidden'}>
         <BlogListPanel onSelectBlog={handleSelectBlog} onClose={handleClosePanel} />
-      )}
-      {activePanel === 'drafts' && (
+      </div>
+      <div className={activePanel === 'drafts' ? '' : 'hidden'}>
         <DraftsPanel onSelectDraft={handleSelectDraft} onClose={handleClosePanel} />
-      )}
+      </div>
       {activePanel === 'settings' && (
         <SettingsPanel onClose={handleClosePanel} />
       )}
