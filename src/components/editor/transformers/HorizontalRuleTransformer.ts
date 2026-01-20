@@ -3,7 +3,7 @@ import {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
   HorizontalRuleNode,
-} from '@lexical/react/LexicalHorizontalRuleNode';
+} from '@lexical/extension';
 import type { LexicalNode } from 'lexical';
 
 export const HORIZONTAL_RULE: ElementTransformer = {
