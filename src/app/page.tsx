@@ -204,6 +204,7 @@ function HomeContent() {
       .replace(/\r\n/g, '\n')       // Normalize line endings
       .replace(/\u00A0/g, ' ')      // Non-breaking space to regular space
       .replace(/[ \t]+$/gm, '')     // Trim trailing whitespace from each line
+      .replace(/^(>+)[ >]*$/gm, '$1') // Normalize empty blockquote lines ("> >" -> ">")
       .replace(/\n{3,}/g, '\n\n')   // Collapse 3+ newlines to 2
       .replace(/\n\n([-*])/g, '\n$1') // Normalize blank line before list to single newline
       .replace(/\\\\/g, '\\')       // Normalize double backslashes to single
@@ -224,6 +225,28 @@ function HomeContent() {
       const normalizedEditor = normalizeForComparison(markdown);
 
       if (normalizedEditor !== normalizedOriginal) {
+        // DEBUG: Keep these logs to diagnose unexpected draft creation - DO NOT REMOVE
+        console.group('Draft created from blog view');
+        console.log('Blog title:', selectedBlog.title);
+        console.log('Original length:', selectedBlog.content.length, '| Normalized:', normalizedOriginal.length);
+        console.log('Editor length:', markdown.length, '| Normalized:', normalizedEditor.length);
+        console.log('--- Normalized original ---');
+        console.log(JSON.stringify(normalizedOriginal));
+        console.log('--- Normalized editor ---');
+        console.log(JSON.stringify(normalizedEditor));
+        // Find first difference
+        for (let i = 0; i < Math.max(normalizedOriginal.length, normalizedEditor.length); i++) {
+          if (normalizedOriginal[i] !== normalizedEditor[i]) {
+            console.log(`First difference at index ${i}:`);
+            console.log(`  Original char: ${JSON.stringify(normalizedOriginal[i])} (code: ${normalizedOriginal.charCodeAt(i)})`);
+            console.log(`  Editor char: ${JSON.stringify(normalizedEditor[i])} (code: ${normalizedEditor.charCodeAt(i)})`);
+            console.log(`  Context original: ${JSON.stringify(normalizedOriginal.slice(Math.max(0, i - 20), i + 20))}`);
+            console.log(`  Context editor: ${JSON.stringify(normalizedEditor.slice(Math.max(0, i - 20), i + 20))}`);
+            break;
+          }
+        }
+        console.groupEnd();
+
         const draftId = createDraftFromBlog(markdown, {
           pubkey: selectedBlog.pubkey,
           dTag: selectedBlog.dTag,
