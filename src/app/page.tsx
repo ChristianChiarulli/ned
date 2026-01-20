@@ -88,17 +88,33 @@ function HomeContent() {
         // Load blog without creating a draft
         setCurrentDraftId(null);
         setIsLoadingBlog(true);
-        const relay = naddrData.relays[0] || activeRelay;
-        fetchBlogByAddress({
-          pubkey: naddrData.pubkey,
-          identifier: naddrData.identifier,
-          relay,
-        }).then((blog) => {
+
+        // Try relays in order: naddr hint, active relay, then all configured relays
+        const relaysToTry = [
+          ...naddrData.relays,
+          activeRelay,
+          ...relays.filter(r => r !== activeRelay && !naddrData.relays.includes(r))
+        ].filter(Boolean);
+
+        // Try each relay until we find the blog
+        const tryFetchFromRelays = async (relayList: string[]): Promise<Blog | null> => {
+          for (const relay of relayList) {
+            const blog = await fetchBlogByAddress({
+              pubkey: naddrData.pubkey,
+              identifier: naddrData.identifier,
+              relay,
+            });
+            if (blog) return blog;
+          }
+          return null;
+        };
+
+        tryFetchFromRelays(relaysToTry).then((blog) => {
           setIsLoadingBlog(false);
           if (blog) {
             setSelectedBlog(blog);
           } else {
-            // Blog not found, redirect to new draft
+            // Blog not found on any relay, redirect to new draft
             const newId = createDraft();
             router.replace(`/?draft=${newId}`);
           }
@@ -208,28 +224,6 @@ function HomeContent() {
       const normalizedEditor = normalizeForComparison(markdown);
 
       if (normalizedEditor !== normalizedOriginal) {
-        // DEBUG: Log what triggered the draft creation
-        console.group('Draft created from blog view');
-        console.log('Blog title:', selectedBlog.title);
-        console.log('Original length:', selectedBlog.content.length, '| Normalized:', normalizedOriginal.length);
-        console.log('Editor length:', markdown.length, '| Normalized:', normalizedEditor.length);
-        console.log('--- Normalized original ---');
-        console.log(JSON.stringify(normalizedOriginal));
-        console.log('--- Normalized editor ---');
-        console.log(JSON.stringify(normalizedEditor));
-        // Find first difference
-        for (let i = 0; i < Math.max(normalizedOriginal.length, normalizedEditor.length); i++) {
-          if (normalizedOriginal[i] !== normalizedEditor[i]) {
-            console.log(`First difference at index ${i}:`);
-            console.log(`  Original char: ${JSON.stringify(normalizedOriginal[i])} (code: ${normalizedOriginal.charCodeAt(i)})`);
-            console.log(`  Editor char: ${JSON.stringify(normalizedEditor[i])} (code: ${normalizedEditor.charCodeAt(i)})`);
-            console.log(`  Context original: ${JSON.stringify(normalizedOriginal.slice(Math.max(0, i - 20), i + 20))}`);
-            console.log(`  Context editor: ${JSON.stringify(normalizedEditor.slice(Math.max(0, i - 20), i + 20))}`);
-            break;
-          }
-        }
-        console.groupEnd();
-
         const draftId = createDraftFromBlog(markdown, {
           pubkey: selectedBlog.pubkey,
           dTag: selectedBlog.dTag,
