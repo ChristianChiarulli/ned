@@ -14,6 +14,7 @@ import { BLOCK_TYPE_LABELS } from './constants';
 interface HeadingSelectProps {
   blockType: BlockType;
   onSelect: (type: BlockType) => void;
+  disabled?: boolean;
 }
 
 const BLOCK_TYPE_ICONS: Record<BlockType, React.ReactNode> = {
@@ -24,13 +25,13 @@ const BLOCK_TYPE_ICONS: Record<BlockType, React.ReactNode> = {
   code: null,
 };
 
-export default function HeadingSelect({ blockType, onSelect }: HeadingSelectProps) {
+export default function HeadingSelect({ blockType, onSelect, disabled = false }: HeadingSelectProps) {
   const selectableTypes: BlockType[] = ['paragraph', 'h1', 'h2', 'h3'];
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-1 px-2 font-normal">
+        <Button variant="ghost" size="sm" className="gap-1 px-2 font-normal" disabled={disabled}>
           {BLOCK_TYPE_ICONS[blockType]}
           <span className="hidden sm:inline">{BLOCK_TYPE_LABELS[blockType]}</span>
           <ChevronDownIcon className="size-3 opacity-50" />

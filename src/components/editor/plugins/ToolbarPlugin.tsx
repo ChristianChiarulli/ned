@@ -28,6 +28,7 @@ import {
   Redo2Icon,
   CodeXmlIcon,
   ImageIcon,
+  FileCode2Icon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -39,9 +40,11 @@ import type { BlockType } from '../toolbar/constants';
 
 interface ToolbarPluginProps {
   portalContainer: HTMLElement | null;
+  isRawMode?: boolean;
+  onToggleRawMode?: () => void;
 }
 
-export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
+export default function ToolbarPlugin({ portalContainer, isRawMode = false, onToggleRawMode }: ToolbarPluginProps) {
   const [editor] = useLexicalComposerContext();
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
@@ -168,7 +171,7 @@ export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
 
   const toolbar = (
     <div className="flex items-center gap-0.5" onMouseDown={(e) => e.preventDefault()}>
-      <HeadingSelect blockType={blockType} onSelect={handleBlockTypeChange} />
+      <HeadingSelect blockType={blockType} onSelect={handleBlockTypeChange} disabled={isRawMode} />
 
       <Separator orientation="vertical" className="mx-1 h-6" />
 
@@ -179,7 +182,8 @@ export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
             size="icon-sm"
             onClick={() => formatText('bold')}
             aria-pressed={isBold}
-            className={isBold ? 'bg-accent' : ''}
+            disabled={isRawMode}
+            className={isBold && !isRawMode ? 'bg-accent' : ''}
           >
             <BoldIcon className="size-4" />
           </Button>
@@ -194,7 +198,8 @@ export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
             size="icon-sm"
             onClick={() => formatText('italic')}
             aria-pressed={isItalic}
-            className={isItalic ? 'bg-accent' : ''}
+            disabled={isRawMode}
+            className={isItalic && !isRawMode ? 'bg-accent' : ''}
           >
             <ItalicIcon className="size-4" />
           </Button>
@@ -209,7 +214,8 @@ export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
             size="icon-sm"
             onClick={() => formatText('strikethrough')}
             aria-pressed={isStrikethrough}
-            className={isStrikethrough ? 'bg-accent' : ''}
+            disabled={isRawMode}
+            className={isStrikethrough && !isRawMode ? 'bg-accent' : ''}
           >
             <StrikethroughIcon className="size-4" />
           </Button>
@@ -224,7 +230,8 @@ export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
             size="icon-sm"
             onClick={() => formatText('code')}
             aria-pressed={isCode}
-            className={isCode ? 'bg-accent' : ''}
+            disabled={isRawMode}
+            className={isCode && !isRawMode ? 'bg-accent' : ''}
           >
             <CodeIcon className="size-4" />
           </Button>
@@ -240,7 +247,7 @@ export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
             variant="ghost"
             size="icon-sm"
             onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
-            disabled={!canUndo}
+            disabled={isRawMode || !canUndo}
           >
             <Undo2Icon className="size-4" />
           </Button>
@@ -254,7 +261,7 @@ export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
             variant="ghost"
             size="icon-sm"
             onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
-            disabled={!canRedo}
+            disabled={isRawMode || !canRedo}
           >
             <Redo2Icon className="size-4" />
           </Button>
@@ -270,6 +277,7 @@ export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
             variant="ghost"
             size="icon-sm"
             onClick={insertCodeBlock}
+            disabled={isRawMode}
             className="hidden md:flex"
           >
             <CodeXmlIcon className="size-4" />
@@ -284,12 +292,30 @@ export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
             variant="ghost"
             size="icon-sm"
             onClick={() => setShowImageDialog(true)}
+            disabled={isRawMode}
             className="hidden md:flex"
           >
             <ImageIcon className="size-4" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>Insert Image</TooltipContent>
+      </Tooltip>
+
+      <Separator orientation="vertical" className="mx-1 h-6 hidden md:block" />
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onToggleRawMode}
+            aria-pressed={isRawMode}
+            className={isRawMode ? 'bg-accent' : ''}
+          >
+            <FileCode2Icon className="size-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{isRawMode ? 'Rich Editor' : 'Raw Markdown'}</TooltipContent>
       </Tooltip>
 
       <ImageDialog
