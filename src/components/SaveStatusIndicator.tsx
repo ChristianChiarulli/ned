@@ -2,12 +2,17 @@
 
 import { useDraftStore } from '@/lib/stores/draftStore';
 import { Loader2, Check, Circle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export function SaveStatusIndicator() {
+interface SaveStatusIndicatorProps {
+  className?: string;
+}
+
+export function SaveStatusIndicator({ className }: SaveStatusIndicatorProps) {
   const saveStatus = useDraftStore((state) => state.saveStatus);
 
   return (
-    <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 min-w-0">
+    <div className={cn("flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 min-w-0", className)}>
       {saveStatus === 'unsaved' && (
         <>
           <Circle className="h-2 w-2 fill-current" />

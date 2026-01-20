@@ -39,7 +39,7 @@ export default function GlobalFeedPanel({ onSelectBlog, onClose }: GlobalFeedPan
   const [broadcastingBlogId, setBroadcastingBlogId] = useState<string | null>(null);
   const activeRelay = useSettingsStore((state) => state.activeRelay);
   const relays = useSettingsStore((state) => state.relays);
-  const { state: sidebarState } = useSidebar();
+  const { state: sidebarState, isMobile } = useSidebar();
 
   useEffect(() => {
     setIsHydrated(true);
@@ -78,8 +78,8 @@ export default function GlobalFeedPanel({ onSelectBlog, onClose }: GlobalFeedPan
 
   return (
     <div
-      className="fixed inset-y-0 z-20 w-72 h-svh border-r border-sidebar-border bg-sidebar flex flex-col overflow-hidden transition-[left] duration-200 ease-linear"
-      style={{ left: `var(--sidebar-width${sidebarState === 'collapsed' ? '-icon' : ''})` }}
+      className="fixed inset-y-0 z-20 h-svh border-r border-sidebar-border bg-sidebar flex flex-col overflow-hidden transition-[left,width] duration-200 ease-linear w-full sm:w-72"
+      style={{ left: isMobile ? 0 : `var(--sidebar-width${sidebarState === 'collapsed' ? '-icon' : ''})` }}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-3 border-b border-sidebar-border">
@@ -138,7 +138,7 @@ export default function GlobalFeedPanel({ onSelectBlog, onClose }: GlobalFeedPan
                       <img
                         src={thumbnail}
                         alt=""
-                        className="w-2/3 h-24 rounded object-cover mt-2"
+                        className="max-h-32 rounded object-contain mt-2"
                       />
                     )}
                     <div className="flex items-center gap-2 mt-2 text-xs text-zinc-400 dark:text-zinc-500">

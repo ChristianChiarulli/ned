@@ -14,8 +14,14 @@ import {
   SidebarRail,
   SidebarHeader,
   SidebarFooter,
-  SidebarSeparator,
+  useSidebar,
 } from '@/components/ui/sidebar';
+import { useSettingsStore } from '@/lib/stores/settingsStore';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface AppSidebarProps {
   activePanel: string | null;
@@ -26,6 +32,8 @@ interface AppSidebarProps {
 export default function AppSidebar({ activePanel, onPanelChange, onNewArticle }: AppSidebarProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const { setOpenMobile, state: sidebarState, isMobile } = useSidebar();
+  const activeRelay = useSettingsStore((state) => state.activeRelay);
 
   useEffect(() => {
     setMounted(true);
@@ -33,25 +41,42 @@ export default function AppSidebar({ activePanel, onPanelChange, onNewArticle }:
 
   const handleClick = (panel: string) => {
     onPanelChange(activePanel === panel ? null : panel);
+    setOpenMobile(false);
+  };
+
+  const handleNewArticle = () => {
+    onNewArticle?.();
+    setOpenMobile(false);
   };
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
+  // Extract hostname from relay URL for display
+  const relayHost = activeRelay ? new URL(activeRelay).hostname : null;
+
   return (
     <Sidebar collapsible="icon" className="border-r border-zinc-200 dark:border-zinc-800">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="New Article" onClick={onNewArticle}>
-              <PlusIcon />
-              <span>New Article</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="border-b border-sidebar-border">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2 px-2 py-1 cursor-default">
+              <ServerIcon className="w-4 h-4 text-purple-500 flex-shrink-0" />
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                {relayHost || 'No relay'}
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent
+            side="right"
+            align="center"
+            hidden={sidebarState !== 'collapsed' || isMobile}
+          >
+            {activeRelay || 'No relay selected'}
+          </TooltipContent>
+        </Tooltip>
       </SidebarHeader>
-      <SidebarSeparator className="mx-0 w-full" />
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
@@ -94,6 +119,16 @@ export default function AppSidebar({ activePanel, onPanelChange, onNewArticle }:
                 >
                   <ServerIcon />
                   <span>Relays</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="New Article"
+                  onClick={handleNewArticle}
+                  className="bg-purple-600 text-white hover:bg-purple-700 hover:text-white dark:bg-purple-600 dark:hover:bg-purple-700"
+                >
+                  <PlusIcon />
+                  <span>New Article</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

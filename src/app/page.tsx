@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { NostrEditor, type NostrEditorHandle } from '@/components/editor';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/sidebar/AppSidebar';
 import BlogListPanel from '@/components/sidebar/BlogListPanel';
 import DraftsPanel from '@/components/sidebar/DraftsPanel';
@@ -22,12 +22,14 @@ import { lookupNote } from '@/lib/nostr/notes';
 import { fetchBlogByAddress } from '@/lib/nostr/fetch';
 import { blogToNaddr, decodeNaddr } from '@/lib/nostr/naddr';
 import { useSettingsStore } from '@/lib/stores/settingsStore';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { Blog } from '@/lib/nostr/types';
 
 
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isMobile = useIsMobile();
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [activePanel, setActivePanel] = useState<string | null>(null);
@@ -89,6 +91,7 @@ function HomeContent() {
         }
 
         // Load blog without creating a draft
+        setSelectedBlog(null);
         setCurrentDraftId(null);
         setIsLoadingBlog(true);
 
@@ -150,7 +153,8 @@ function HomeContent() {
     checkBlogForEditsRef.current();
     const naddr = blogToNaddr(blog, relays);
     router.push(`/?blog=${naddr}`);
-  }, [router, relays]);
+    if (isMobile) setActivePanel(null);
+  }, [router, relays, isMobile]);
 
   const getEditorContent = useCallback(() => {
     return editorRef.current?.getMarkdown() ?? '';
@@ -186,12 +190,14 @@ function HomeContent() {
     checkBlogForEditsRef.current();
     const newId = createDraft();
     router.push(`/?draft=${newId}`);
-  }, [createDraft, router]);
+    if (isMobile) setActivePanel(null);
+  }, [createDraft, router, isMobile]);
 
   const handleSelectDraft = useCallback((draftId: string) => {
     checkBlogForEditsRef.current();
     router.push(`/?draft=${draftId}`);
-  }, [router]);
+    if (isMobile) setActivePanel(null);
+  }, [router, isMobile]);
 
   const isLoggedIn = isHydrated && !!pubkey;
 
@@ -355,12 +361,13 @@ function HomeContent() {
       )}
 
       <SidebarInset className="bg-zinc-50 dark:bg-zinc-950">
-        <header className="sticky top-0 z-10 flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
-          <div className="flex items-center gap-2 min-w-[100px]">
-            <SaveStatusIndicator />
+        <header className="sticky top-0 z-10 flex-shrink-0 flex items-center justify-between px-2 sm:px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <SidebarTrigger className="md:hidden" />
+            <SaveStatusIndicator className="hidden sm:flex" />
           </div>
-          <div ref={toolbarRef} className="flex items-center justify-center" />
-          <div className="flex items-center gap-2 justify-end min-w-[100px]">
+          <div ref={toolbarRef} className="flex items-center justify-center flex-1 min-w-0" />
+          <div className="flex items-center gap-1 sm:gap-2 justify-end flex-shrink-0">
             {isLoggedIn && selectedBlog && !currentDraftId && (
               <Button
                 size="sm"

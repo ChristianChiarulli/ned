@@ -14,7 +14,7 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
   const { relays, activeRelay, addRelay, removeRelay, setActiveRelay } = useSettingsStore();
   const [newRelay, setNewRelay] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
-  const { state: sidebarState } = useSidebar();
+  const { state: sidebarState, isMobile } = useSidebar();
 
   useEffect(() => {
     setIsHydrated(true);
@@ -40,8 +40,8 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
 
   return (
     <div
-      className="fixed inset-y-0 z-20 w-72 h-svh border-r border-sidebar-border bg-sidebar flex flex-col overflow-hidden transition-[left] duration-200 ease-linear"
-      style={{ left: `var(--sidebar-width${sidebarState === 'collapsed' ? '-icon' : ''})` }}
+      className="fixed inset-y-0 z-20 h-svh border-r border-sidebar-border bg-sidebar flex flex-col overflow-hidden transition-[left,width] duration-200 ease-linear w-full sm:w-72"
+      style={{ left: isMobile ? 0 : `var(--sidebar-width${sidebarState === 'collapsed' ? '-icon' : ''})` }}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-3 border-b border-sidebar-border">
