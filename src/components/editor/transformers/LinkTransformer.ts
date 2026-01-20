@@ -9,12 +9,9 @@ export const LINK: TextMatchTransformer = {
     }
     const displayText = node.getDisplayText();
     const url = node.getUrl();
-    // If displayText is set (user customized it), use markdown format
-    // Otherwise just output the raw URL
-    if (displayText) {
-      return `[${displayText}](${url})`;
-    }
-    return url;
+    // Always use markdown link format to prevent raw URLs from being
+    // auto-converted by other transformers (e.g., YouTube)
+    return `[${displayText || url}](${url})`;
   },
   // Match [text](url) format
   importRegExp: /\[([^\]]+)\]\(([^)]+)\)/,
