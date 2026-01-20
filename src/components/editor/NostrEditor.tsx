@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useImperativeHandle, forwardRef } from 'react';
+import { useMemo, useImperativeHandle, forwardRef, useEffect } from 'react';
 import { LexicalExtensionComposer } from '@lexical/react/LexicalExtensionComposer';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
@@ -65,6 +65,7 @@ interface NostrEditorProps {
   onProfileLookup?: ProfileLookupFn;
   onNoteLookup?: NoteLookupFn;
   toolbarContainer?: HTMLElement | null;
+  readOnly?: boolean;
 }
 
 export interface NostrEditorHandle {
@@ -94,14 +95,21 @@ function EditorInner({
   onChange,
   toolbarContainer,
   initialMarkdown,
+  readOnly,
 }: {
   editorRef: React.RefObject<NostrEditorHandle | null>;
   placeholder: string;
   onChange?: (editorState: EditorState) => void;
   toolbarContainer?: HTMLElement | null;
   initialMarkdown?: string;
+  readOnly?: boolean;
 }) {
   const [editor] = useLexicalComposerContext();
+
+  // Set editor editable state
+  useEffect(() => {
+    editor.setEditable(!readOnly);
+  }, [editor, readOnly]);
 
   useImperativeHandle(editorRef, () => ({
     getMarkdown: () => {
@@ -161,6 +169,7 @@ const NostrEditor = forwardRef<NostrEditorHandle, NostrEditorProps>(function Nos
     onProfileLookup,
     onNoteLookup,
     toolbarContainer,
+    readOnly = false,
   },
   ref
 ) {
@@ -202,6 +211,7 @@ const NostrEditor = forwardRef<NostrEditorHandle, NostrEditorProps>(function Nos
               onChange={onChange}
               toolbarContainer={toolbarContainer}
               initialMarkdown={initialMarkdown}
+              readOnly={readOnly}
             />
           </div>
         </div>

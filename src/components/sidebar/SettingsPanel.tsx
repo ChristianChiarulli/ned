@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { XIcon, CheckIcon } from 'lucide-react';
 import { useSettingsStore } from '@/lib/stores/settingsStore';
+import { useSidebar } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 
 interface SettingsPanelProps {
@@ -13,6 +14,7 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
   const { relays, activeRelay, addRelay, removeRelay, setActiveRelay } = useSettingsStore();
   const [newRelay, setNewRelay] = useState('');
   const [isHydrated, setIsHydrated] = useState(false);
+  const { state: sidebarState } = useSidebar();
 
   useEffect(() => {
     setIsHydrated(true);
@@ -37,7 +39,10 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
   }
 
   return (
-    <div className="sticky top-0 w-72 h-screen border-r border-sidebar-border bg-sidebar flex flex-col">
+    <div
+      className="fixed inset-y-0 z-20 w-72 h-svh border-r border-sidebar-border bg-sidebar flex flex-col overflow-hidden transition-[left] duration-200 ease-linear"
+      style={{ left: `var(--sidebar-width${sidebarState === 'collapsed' ? '-icon' : ''})` }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-3 border-b border-sidebar-border">
         <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
@@ -54,7 +59,7 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
       </div>
 
       {/* Relays Content */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto overscroll-none p-3">
         <div className="space-y-4">
           <div>
             <ul className="space-y-1">

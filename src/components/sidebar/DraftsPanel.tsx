@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { XIcon, FileEditIcon, Trash2Icon, PenLineIcon } from 'lucide-react';
 import { useDraftStore, type Draft } from '@/lib/stores/draftStore';
+import { useSidebar } from '@/components/ui/sidebar';
 import { extractFirstImage } from '@/lib/utils/markdown';
 
 interface DraftsPanelProps {
@@ -41,6 +42,7 @@ export default function DraftsPanel({ onSelectDraft, onClose }: DraftsPanelProps
   const [isHydrated, setIsHydrated] = useState(false);
   const drafts = useDraftStore((state) => state.drafts);
   const deleteDraft = useDraftStore((state) => state.deleteDraft);
+  const { state: sidebarState } = useSidebar();
 
   // Convert drafts object to sorted array (most recent first)
   // Keep linked drafts (edits to published blogs) even if empty
@@ -62,7 +64,10 @@ export default function DraftsPanel({ onSelectDraft, onClose }: DraftsPanelProps
   };
 
   return (
-    <div className="sticky top-0 w-72 h-screen border-r border-sidebar-border bg-sidebar flex flex-col">
+    <div
+      className="fixed inset-y-0 z-20 w-72 h-svh border-r border-sidebar-border bg-sidebar flex flex-col overflow-hidden transition-[left] duration-200 ease-linear"
+      style={{ left: `var(--sidebar-width${sidebarState === 'collapsed' ? '-icon' : ''})` }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-3 border-b border-sidebar-border">
         <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
@@ -79,7 +84,7 @@ export default function DraftsPanel({ onSelectDraft, onClose }: DraftsPanelProps
       </div>
 
       {/* Drafts List */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
+      <div className="flex-1 overflow-y-auto overscroll-none">
         {!isHydrated && (
           <div className="p-4 text-center text-zinc-500 dark:text-zinc-400 text-sm">
             Loading...

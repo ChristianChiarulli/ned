@@ -361,6 +361,26 @@ function HomeContent() {
           </div>
           <div ref={toolbarRef} className="flex items-center justify-center" />
           <div className="flex items-center gap-2 justify-end min-w-[100px]">
+            {isLoggedIn && selectedBlog && !currentDraftId && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  const markdown = editorRef.current?.getMarkdown() ?? selectedBlog.content;
+                  const draftId = createDraftFromBlog(markdown, {
+                    pubkey: selectedBlog.pubkey,
+                    dTag: selectedBlog.dTag,
+                    title: selectedBlog.title,
+                    summary: selectedBlog.summary,
+                    image: selectedBlog.image,
+                    tags: selectedBlog.tags,
+                  });
+                  router.replace(`/?draft=${draftId}`);
+                }}
+              >
+                Edit
+              </Button>
+            )}
             {isLoggedIn && currentDraftId && (
               <Button
                 size="sm"
@@ -379,10 +399,7 @@ function HomeContent() {
               Loading...
             </div>
           ) : (
-          <div
-            className="min-h-full w-full max-w-3xl mx-auto flex flex-col"
-            onKeyDown={handleEditorKeyDown}
-          >
+          <div className="min-h-full w-full max-w-3xl mx-auto flex flex-col">
             <NostrEditor
               ref={editorRef}
               key={editorKey}
@@ -392,6 +409,7 @@ function HomeContent() {
               onProfileLookup={lookupProfile}
               onNoteLookup={lookupNote}
               toolbarContainer={toolbarElement}
+              readOnly={!!selectedBlog}
             />
           </div>
           )}
