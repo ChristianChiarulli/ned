@@ -11,10 +11,14 @@ import {
 import { IMAGE } from '../transformers/ImageTransformer';
 import { LINK } from '../transformers/LinkTransformer';
 import { NOSTR_TRANSFORMERS } from '../transformers/NostrTransformers';
+import { TABLE } from '../transformers/TableTransformer';
+import { HORIZONTAL_RULE } from '../transformers/HorizontalRuleTransformer';
 
-// IMAGE must come before LINK transformer to properly match ![alt](url) before [alt](url)
+// TABLE and IMAGE must come first for proper matching
 // We exclude TEXT_MATCH_TRANSFORMERS (which contains the default LINK) and use our custom transformers instead
 const ALL_TRANSFORMERS = [
+  TABLE,
+  HORIZONTAL_RULE,
   IMAGE,
   LINK,
   ...NOSTR_TRANSFORMERS,

@@ -29,6 +29,7 @@ import {
   CodeXmlIcon,
   ImageIcon,
   FileCode2Icon,
+  TableIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -36,6 +37,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { $createImageNode } from '../nodes/ImageNode';
 import HeadingSelect from '../toolbar/HeadingSelect';
 import ImageDialog from '../toolbar/ImageDialog';
+import InsertTableDialog from '../toolbar/InsertTableDialog';
 import type { BlockType } from '../toolbar/constants';
 
 interface ToolbarPluginProps {
@@ -54,6 +56,7 @@ export default function ToolbarPlugin({ portalContainer, isRawMode = false, onTo
   const [canRedo, setCanRedo] = useState(false);
   const [blockType, setBlockType] = useState<BlockType>('paragraph');
   const [showImageDialog, setShowImageDialog] = useState(false);
+  const [showTableDialog, setShowTableDialog] = useState(false);
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -164,6 +167,10 @@ export default function ToolbarPlugin({ portalContainer, isRawMode = false, onTo
     },
     [editor]
   );
+
+  const openTableDialog = useCallback(() => {
+    setShowTableDialog(true);
+  }, []);
 
   if (!portalContainer) {
     return null;
@@ -301,6 +308,21 @@ export default function ToolbarPlugin({ portalContainer, isRawMode = false, onTo
         <TooltipContent>Insert Image</TooltipContent>
       </Tooltip>
 
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={openTableDialog}
+            disabled={isRawMode}
+            className="hidden md:flex"
+          >
+            <TableIcon className="size-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Insert Table</TooltipContent>
+      </Tooltip>
+
       <Separator orientation="vertical" className="mx-1 h-6 hidden md:block" />
 
       <Tooltip>
@@ -322,6 +344,12 @@ export default function ToolbarPlugin({ portalContainer, isRawMode = false, onTo
         isOpen={showImageDialog}
         onClose={() => setShowImageDialog(false)}
         onInsert={insertImage}
+      />
+
+      <InsertTableDialog
+        isOpen={showTableDialog}
+        onClose={() => setShowTableDialog(false)}
+        editor={editor}
       />
     </div>
   );

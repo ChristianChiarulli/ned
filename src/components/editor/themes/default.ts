@@ -34,6 +34,13 @@ const theme: EditorThemeClasses = {
   },
   code: 'bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4 font-mono text-sm block mb-2 overflow-x-auto',
   image: 'inline-block my-2',
+  hr: 'my-6 border-t border-zinc-300 dark:border-zinc-600',
+  table: 'border-collapse border border-zinc-300 dark:border-zinc-700 my-4 w-full',
+  tableCell: 'border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-left align-top',
+  tableCellHeader: 'border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-left font-bold bg-zinc-100 dark:bg-zinc-800',
+  tableRow: '',
+  tableSelected: 'bg-blue-100 dark:bg-blue-900/30',
+  tableCellSelected: 'bg-blue-100 dark:bg-blue-900/30',
 };
 
 export default theme;

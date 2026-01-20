@@ -29,6 +29,7 @@ import {
   TabIndentationExtension,
   HorizontalRuleExtension,
 } from '@lexical/extension';
+import { TableExtension } from '@lexical/table';
 
 import theme from './themes/default';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
@@ -49,6 +50,10 @@ import { NaddrNode } from './nodes/NaddrNode';
 import { IMAGE } from './transformers/ImageTransformer';
 import { LINK } from './transformers/LinkTransformer';
 import { NOSTR_TRANSFORMERS } from './transformers/NostrTransformers';
+import { TABLE, setTableTransformers } from './transformers/TableTransformer';
+import { HORIZONTAL_RULE } from './transformers/HorizontalRuleTransformer';
+import TableActionMenuPlugin from './plugins/TableActionMenuPlugin';
+import TableCellResizerPlugin from './plugins/TableCellResizerPlugin';
 
 interface NostrEditorProps {
   placeholder?: string;
@@ -66,6 +71,8 @@ export interface NostrEditorHandle {
 
 // All transformers for markdown conversion
 const ALL_TRANSFORMERS = [
+  TABLE,
+  HORIZONTAL_RULE,
   IMAGE,
   LINK,
   ...NOSTR_TRANSFORMERS,
@@ -73,6 +80,9 @@ const ALL_TRANSFORMERS = [
   ...MULTILINE_ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,
 ];
+
+// Set transformers for table cell content parsing
+setTableTransformers(ALL_TRANSFORMERS as any);
 
 // Inner component to access editor context and handle raw mode
 function EditorInner({
@@ -187,6 +197,8 @@ function EditorInner({
       <ListBackspacePlugin />
       <CodeBlockShortcutPlugin />
       <MarkdownShortcutPlugin transformers={ALL_TRANSFORMERS} />
+      <TableActionMenuPlugin />
+      <TableCellResizerPlugin />
     </>
   );
 }
@@ -218,6 +230,7 @@ const NostrEditor = forwardRef<NostrEditorHandle, NostrEditorProps>(function Nos
           CodeExtension,
           HorizontalRuleExtension,
           TabIndentationExtension,
+          TableExtension,
           ...(autoFocus ? [AutoFocusExtension] : []),
         ],
       }),
