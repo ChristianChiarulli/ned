@@ -46,11 +46,13 @@ import { NpubNode } from './nodes/NpubNode';
 import { NprofileNode } from './nodes/NprofileNode';
 import { NeventNode } from './nodes/NeventNode';
 import { NaddrNode } from './nodes/NaddrNode';
+import { YouTubeNode } from './nodes/YouTubeNode';
 import { IMAGE } from './transformers/ImageTransformer';
 import { LINK } from './transformers/LinkTransformer';
 import { NOSTR_TRANSFORMERS } from './transformers/NostrTransformers';
 import { TABLE, setTableTransformers } from './transformers/TableTransformer';
 import { HORIZONTAL_RULE } from './transformers/HorizontalRuleTransformer';
+import { YOUTUBE_TRANSFORMER } from './transformers/YouTubeTransformer';
 import TableActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizerPlugin from './plugins/TableCellResizerPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
@@ -71,6 +73,7 @@ export interface NostrEditorHandle {
 
 // All transformers for markdown conversion
 const ALL_TRANSFORMERS = [
+  YOUTUBE_TRANSFORMER,
   TABLE,
   HORIZONTAL_RULE,
   IMAGE,
@@ -167,7 +170,7 @@ const NostrEditor = forwardRef<NostrEditorHandle, NostrEditorProps>(function Nos
         name: 'NostrEditor',
         namespace: 'NostrEditor',
         theme,
-        nodes: [ImageNode, LinkNode, NpubNode, NprofileNode, NeventNode, NaddrNode],
+        nodes: [ImageNode, LinkNode, NpubNode, NprofileNode, NeventNode, NaddrNode, YouTubeNode],
         onError: (error: Error) => console.error('Lexical error:', error),
         dependencies: [
           RichTextExtension,

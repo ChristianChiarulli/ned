@@ -1,6 +1,7 @@
 'use client';
 
-import { FileTextIcon, FileEditIcon, SettingsIcon, PlusIcon } from 'lucide-react';
+import { FileTextIcon, FileEditIcon, SettingsIcon, PlusIcon, SunIcon, MoonIcon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import {
   Sidebar,
   SidebarContent,
@@ -11,6 +12,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarHeader,
+  SidebarFooter,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 
@@ -21,8 +23,14 @@ interface AppSidebarProps {
 }
 
 export default function AppSidebar({ activePanel, onPanelChange, onNewArticle }: AppSidebarProps) {
+  const { theme, setTheme } = useTheme();
+
   const handleClick = (panel: string) => {
     onPanelChange(activePanel === panel ? null : panel);
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   return (
@@ -76,6 +84,16 @@ export default function AppSidebar({ activePanel, onPanelChange, onNewArticle }:
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={toggleTheme}>
+              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+              <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

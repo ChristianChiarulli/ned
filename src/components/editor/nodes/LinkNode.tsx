@@ -16,6 +16,7 @@ import {
 } from 'lexical';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { $createYouTubeNode } from './YouTubeNode';
 
 export interface LinkPayload {
   url: string;
@@ -45,6 +46,19 @@ function getDisplayTextFromUrl(url: string): string {
   } catch {
     return url;
   }
+}
+
+function isYouTubeUrl(url: string): boolean {
+  return (
+    url.includes('youtube.com') ||
+    url.includes('youtu.be') ||
+    url.includes('youtube-nocookie.com')
+  );
+}
+
+function extractYouTubeVideoId(url: string): string | null {
+  const match = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/.exec(url);
+  return match?.[2] && match[2].length === 11 ? match[2] : null;
 }
 
 function LinkComponent({
@@ -102,6 +116,22 @@ function LinkComponent({
       handleCancel();
     }
   }, [handleSave, handleCancel]);
+
+  const handleConvertToEmbed = useCallback(() => {
+    const videoId = extractYouTubeVideoId(url);
+    if (!videoId) return;
+
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if ($isLinkNode(node)) {
+        const youtubeNode = $createYouTubeNode(videoId);
+        node.replace(youtubeNode);
+      }
+    });
+    setIsEditing(false);
+  }, [editor, nodeKey, url]);
+
+  const isYouTube = isYouTubeUrl(url);
 
   // Close popup when clicking outside
   useEffect(() => {
@@ -185,6 +215,23 @@ function LinkComponent({
                 autoComplete="url"
               />
             </div>
+            {isYouTube && (
+              <button
+                onClick={handleConvertToEmbed}
+                className="w-full px-2 py-1.5 text-xs text-left text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded flex items-center gap-2"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+                </svg>
+                Convert to embed
+              </button>
+            )}
             <div className="flex gap-2 justify-end mt-1">
               <button
                 onClick={handleCancel}

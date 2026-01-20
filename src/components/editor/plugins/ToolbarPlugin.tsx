@@ -29,6 +29,7 @@ import {
   CodeXmlIcon,
   ImageIcon,
   TableIcon,
+  YoutubeIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -37,6 +38,7 @@ import { $createImageNode } from '../nodes/ImageNode';
 import HeadingSelect from '../toolbar/HeadingSelect';
 import ImageDialog from '../toolbar/ImageDialog';
 import InsertTableDialog from '../toolbar/InsertTableDialog';
+import YouTubeDialog from '../toolbar/YouTubeDialog';
 import type { BlockType } from '../toolbar/constants';
 
 interface ToolbarPluginProps {
@@ -54,6 +56,7 @@ export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
   const [blockType, setBlockType] = useState<BlockType>('paragraph');
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showTableDialog, setShowTableDialog] = useState(false);
+  const [showYouTubeDialog, setShowYouTubeDialog] = useState(false);
 
   const updateToolbar = useCallback(() => {
     const selection = $getSelection();
@@ -305,12 +308,26 @@ export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
             variant="ghost"
             size="icon-sm"
             onClick={openTableDialog}
-                       className="hidden md:flex"
+            className="hidden md:flex"
           >
             <TableIcon className="size-4" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>Insert Table</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setShowYouTubeDialog(true)}
+            className="hidden md:flex"
+          >
+            <YoutubeIcon className="size-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Embed YouTube</TooltipContent>
       </Tooltip>
 
       <ImageDialog
@@ -323,6 +340,11 @@ export default function ToolbarPlugin({ portalContainer }: ToolbarPluginProps) {
         isOpen={showTableDialog}
         onClose={() => setShowTableDialog(false)}
         editor={editor}
+      />
+
+      <YouTubeDialog
+        isOpen={showYouTubeDialog}
+        onClose={() => setShowYouTubeDialog(false)}
       />
     </div>
   );

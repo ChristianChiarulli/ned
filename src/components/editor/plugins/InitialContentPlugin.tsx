@@ -14,10 +14,12 @@ import { LINK } from '../transformers/LinkTransformer';
 import { NOSTR_TRANSFORMERS } from '../transformers/NostrTransformers';
 import { TABLE } from '../transformers/TableTransformer';
 import { HORIZONTAL_RULE } from '../transformers/HorizontalRuleTransformer';
+import { YOUTUBE_TRANSFORMER } from '../transformers/YouTubeTransformer';
 
-// TABLE and IMAGE must come first for proper matching
+// YOUTUBE_TRANSFORMER, TABLE and IMAGE must come first for proper matching
 // We exclude TEXT_MATCH_TRANSFORMERS (which contains the default LINK) and use our custom transformers instead
 const ALL_TRANSFORMERS = [
+  YOUTUBE_TRANSFORMER,
   TABLE,
   HORIZONTAL_RULE,
   IMAGE,
