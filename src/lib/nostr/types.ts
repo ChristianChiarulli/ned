@@ -21,6 +21,7 @@ export interface Blog {
   dTag: string;
   content: string;
   tags: string[];
+  rawEvent?: NostrEvent; // Store full signed event for broadcasting
 }
 
 export function eventToBlog(event: NostrEvent): Blog {
@@ -39,5 +40,6 @@ export function eventToBlog(event: NostrEvent): Blog {
     dTag: getTag('d') || '',
     content: event.content,
     tags,
+    rawEvent: event, // Include full signed event for broadcasting
   };
 }

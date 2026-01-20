@@ -16,7 +16,7 @@ interface PublishOptions {
   dTag?: string; // For editing existing articles - must match original d tag
 }
 
-interface PublishResult {
+export interface PublishResult {
   relay: string;
   success: boolean;
   message?: string;
@@ -114,6 +114,13 @@ export async function deleteArticle({
   );
 
   return results;
+}
+
+export async function broadcastEvent(
+  event: NostrEvent,
+  relays: string[]
+): Promise<PublishResult[]> {
+  return Promise.all(relays.map((relay) => publishToRelay(event, relay)));
 }
 
 async function publishToRelay(event: NostrEvent, relay: string): Promise<PublishResult> {

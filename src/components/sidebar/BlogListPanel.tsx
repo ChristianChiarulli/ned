@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { XIcon, MoreVerticalIcon, PenLineIcon } from 'lucide-react';
 import { fetchBlogs } from '@/lib/nostr/fetch';
-import { deleteArticle } from '@/lib/nostr/publish';
+import { deleteArticle, broadcastEvent } from '@/lib/nostr/publish';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { useSettingsStore } from '@/lib/stores/settingsStore';
 import { useDraftStore } from '@/lib/stores/draftStore';
@@ -38,6 +38,7 @@ function truncateNpub(pubkey: string): string {
 export default function BlogListPanel({ onSelectBlog, onClose }: BlogListPanelProps) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [deletingBlogId, setDeletingBlogId] = useState<string | null>(null);
+  const [broadcastingBlogId, setBroadcastingBlogId] = useState<string | null>(null);
   const pubkey = useAuthStore((state) => state.pubkey);
   const relays = useSettingsStore((state) => state.relays);
   const activeRelay = useSettingsStore((state) => state.activeRelay);
@@ -78,6 +79,20 @@ export default function BlogListPanel({ onSelectBlog, onClose }: BlogListPanelPr
       console.error('Failed to delete blog:', err);
     } finally {
       setDeletingBlogId(null);
+    }
+  };
+
+  const handleBroadcast = async (blog: Blog, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (broadcastingBlogId || !blog.rawEvent) return;
+
+    setBroadcastingBlogId(blog.id);
+    try {
+      await broadcastEvent(blog.rawEvent, relays);
+    } catch (err) {
+      console.error('Failed to broadcast blog:', err);
+    } finally {
+      setBroadcastingBlogId(null);
     }
   };
 
@@ -177,6 +192,12 @@ export default function BlogListPanel({ onSelectBlog, onClose }: BlogListPanelPr
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={(e) => handleBroadcast(blog, e)}
+                      disabled={broadcastingBlogId === blog.id || !blog.rawEvent}
+                    >
+                      {broadcastingBlogId === blog.id ? 'Broadcasting...' : 'Broadcast'}
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={(e) => handleDelete(blog, e)}
                       disabled={deletingBlogId === blog.id}

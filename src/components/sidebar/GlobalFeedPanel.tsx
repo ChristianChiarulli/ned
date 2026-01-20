@@ -2,10 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { XIcon } from 'lucide-react';
+import { XIcon, MoreVerticalIcon } from 'lucide-react';
 import { fetchBlogs } from '@/lib/nostr/fetch';
+import { broadcastEvent } from '@/lib/nostr/publish';
 import { useSettingsStore } from '@/lib/stores/settingsStore';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { extractFirstImage } from '@/lib/utils/markdown';
 import type { Blog } from '@/lib/nostr/types';
 
@@ -28,7 +35,9 @@ function truncateNpub(pubkey: string): string {
 
 export default function GlobalFeedPanel({ onSelectBlog, onClose }: GlobalFeedPanelProps) {
   const [isHydrated, setIsHydrated] = useState(false);
+  const [broadcastingBlogId, setBroadcastingBlogId] = useState<string | null>(null);
   const activeRelay = useSettingsStore((state) => state.activeRelay);
+  const relays = useSettingsStore((state) => state.relays);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -50,6 +59,20 @@ export default function GlobalFeedPanel({ onSelectBlog, onClose }: GlobalFeedPan
   });
 
   const blogs = data?.pages.flatMap((page) => page.blogs) ?? [];
+
+  const handleBroadcast = async (blog: Blog, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (broadcastingBlogId || !blog.rawEvent) return;
+
+    setBroadcastingBlogId(blog.id);
+    try {
+      await broadcastEvent(blog.rawEvent, relays);
+    } catch (err) {
+      console.error('Failed to broadcast blog:', err);
+    } finally {
+      setBroadcastingBlogId(null);
+    }
+  };
 
   return (
     <div className="sticky top-0 w-72 h-screen border-r border-sidebar-border bg-sidebar flex flex-col">
@@ -92,10 +115,10 @@ export default function GlobalFeedPanel({ onSelectBlog, onClose }: GlobalFeedPan
           {blogs.map((blog) => {
             const thumbnail = blog.image || extractFirstImage(blog.content);
             return (
-              <li key={blog.id}>
+              <li key={blog.id} className="relative group">
                 <button
                   onClick={() => onSelectBlog?.(blog)}
-                  className="w-full text-left p-3 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                  className="w-full text-left p-3 pr-10 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
                 >
                   <div>
                     <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
@@ -120,6 +143,27 @@ export default function GlobalFeedPanel({ onSelectBlog, onClose }: GlobalFeedPan
                     </div>
                   </div>
                 </button>
+                <div className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 rounded hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400"
+                        aria-label="More options"
+                      >
+                        <MoreVerticalIcon className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={(e) => handleBroadcast(blog, e)}
+                        disabled={broadcastingBlogId === blog.id || !blog.rawEvent}
+                      >
+                        {broadcastingBlogId === blog.id ? 'Broadcasting...' : 'Broadcast'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </li>
             );
           })}
