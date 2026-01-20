@@ -81,7 +81,7 @@ function EditorRefPlugin({ editorRef }: { editorRef: React.RefObject<NostrEditor
     getMarkdown: () => {
       let markdown = '';
       editor.getEditorState().read(() => {
-        markdown = $convertToMarkdownString(ALL_TRANSFORMERS);
+        markdown = $convertToMarkdownString(ALL_TRANSFORMERS, undefined, true);
       });
       return markdown;
     },

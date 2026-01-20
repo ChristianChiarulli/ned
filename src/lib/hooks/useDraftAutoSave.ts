@@ -3,7 +3,7 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { useDraftStore } from '../stores/draftStore';
 
-const DEBOUNCE_MS = 1000;
+const DEBOUNCE_MS = 500;
 
 export function useDraftAutoSave(draftId: string | null) {
   const { setDraftContent, setSaveStatus, markSaved, saveStatus } = useDraftStore();

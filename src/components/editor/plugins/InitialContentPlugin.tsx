@@ -36,7 +36,7 @@ export default function InitialContentPlugin({ markdown }: InitialContentPluginP
     hasInitialized.current = true;
 
     editor.update(() => {
-      $convertFromMarkdownString(markdown, ALL_TRANSFORMERS);
+      $convertFromMarkdownString(markdown, ALL_TRANSFORMERS, undefined, true);
     });
   }, [editor, markdown]);
 
