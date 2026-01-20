@@ -39,6 +39,9 @@ function HomeContent() {
   const editorRef = useRef<NostrEditorHandle>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [toolbarElement, setToolbarElement] = useState<HTMLDivElement | null>(null);
+  const hasUserTyped = useRef(false);
+  const checkBlogForEditsRef = useRef<() => void>(() => {});
+  const draftSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Connect toolbar ref to state once after mount
   useEffect(() => {
@@ -143,6 +146,8 @@ function HomeContent() {
   }, [isHydrated, urlDraftId, urlBlogId, getDraft, createDraft, findDraftByLinkedBlog, router, relays, selectedBlog]);
 
   const handleSelectBlog = useCallback((blog: Blog) => {
+    // Check for unsaved edits before navigating
+    checkBlogForEditsRef.current();
     const naddr = blogToNaddr(blog, relays);
     router.push(`/?blog=${naddr}`);
   }, [router, relays]);
@@ -178,11 +183,13 @@ function HomeContent() {
   }, []);
 
   const handleNewArticle = useCallback(() => {
+    checkBlogForEditsRef.current();
     const newId = createDraft();
     router.push(`/?draft=${newId}`);
   }, [createDraft, router]);
 
   const handleSelectDraft = useCallback((draftId: string) => {
+    checkBlogForEditsRef.current();
     router.push(`/?draft=${draftId}`);
   }, [router]);
 
@@ -198,55 +205,31 @@ function HomeContent() {
   const linkedBlogKey = draft?.linkedBlog ? `${draft.linkedBlog.pubkey}:${draft.linkedBlog.dTag}` : null;
   const editorKey = blogIdentityKey || linkedBlogKey || currentDraftId || 'new';
 
-  // Normalize content for comparison - ignore insignificant differences
-  const normalizeForComparison = (content: string) => {
-    return content
-      .replace(/\r\n/g, '\n')       // Normalize line endings
-      .replace(/\u00A0/g, ' ')      // Non-breaking space to regular space
-      .replace(/[ \t]+$/gm, '')     // Trim trailing whitespace from each line
-      .replace(/^(>+)[ >]*$/gm, '$1') // Normalize empty blockquote lines ("> >" -> ">")
-      .replace(/\n{3,}/g, '\n\n')   // Collapse 3+ newlines to 2
-      .replace(/\n\n([-*])/g, '\n$1') // Normalize blank line before list to single newline
-      .replace(/\\\\/g, '\\')       // Normalize double backslashes to single
-      .replace(/\\_/g, '_')         // Unescape underscores (editor over-escapes)
-      .replace(/\\\*/g, '*')        // Unescape asterisks
-      .replace(/\\\./g, '.')        // Unescape periods
-      .trim();                       // Remove leading/trailing whitespace
-  };
+  // Reset hasUserTyped when switching to a different article
+  useEffect(() => {
+    hasUserTyped.current = false;
+  }, [editorKey]);
 
-  // Handle first edit on a blog - create draft and redirect
-  const handleEditorChange = useCallback(() => {
-    const markdown = editorRef.current?.getMarkdown() ?? '';
+  // Track when user actually types and create draft on first edit
+  const handleEditorKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (hasUserTyped.current) return; // Already handled
 
-    if (selectedBlog) {
-      // Only create draft if content actually changed from the original
-      // Normalize both to ignore newline-only differences
-      const normalizedOriginal = normalizeForComparison(selectedBlog.content);
-      const normalizedEditor = normalizeForComparison(markdown);
+    // Ignore non-content-modifying keys
+    const ignoredKeys = [
+      'Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'NumLock', 'ScrollLock',
+      'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+      'Home', 'End', 'PageUp', 'PageDown',
+      'Escape', 'Tab', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
+    ];
+    if (ignoredKeys.includes(e.key)) return;
 
-      if (normalizedEditor !== normalizedOriginal) {
-        // DEBUG: Keep these logs to diagnose unexpected draft creation - DO NOT REMOVE
-        console.group('Draft created from blog view');
-        console.log('Blog title:', selectedBlog.title);
-        console.log('Original length:', selectedBlog.content.length, '| Normalized:', normalizedOriginal.length);
-        console.log('Editor length:', markdown.length, '| Normalized:', normalizedEditor.length);
-        console.log('--- Normalized original ---');
-        console.log(JSON.stringify(normalizedOriginal));
-        console.log('--- Normalized editor ---');
-        console.log(JSON.stringify(normalizedEditor));
-        // Find first difference
-        for (let i = 0; i < Math.max(normalizedOriginal.length, normalizedEditor.length); i++) {
-          if (normalizedOriginal[i] !== normalizedEditor[i]) {
-            console.log(`First difference at index ${i}:`);
-            console.log(`  Original char: ${JSON.stringify(normalizedOriginal[i])} (code: ${normalizedOriginal.charCodeAt(i)})`);
-            console.log(`  Editor char: ${JSON.stringify(normalizedEditor[i])} (code: ${normalizedEditor.charCodeAt(i)})`);
-            console.log(`  Context original: ${JSON.stringify(normalizedOriginal.slice(Math.max(0, i - 20), i + 20))}`);
-            console.log(`  Context editor: ${JSON.stringify(normalizedEditor.slice(Math.max(0, i - 20), i + 20))}`);
-            break;
-          }
-        }
-        console.groupEnd();
+    hasUserTyped.current = true;
 
+    // If viewing a blog, create draft on first content-modifying keystroke
+    if (selectedBlog && editorRef.current) {
+      // Small delay to let the keystroke be processed first
+      setTimeout(() => {
+        const markdown = editorRef.current?.getMarkdown() ?? '';
         const draftId = createDraftFromBlog(markdown, {
           pubkey: selectedBlog.pubkey,
           dTag: selectedBlog.dTag,
@@ -256,12 +239,102 @@ function HomeContent() {
           tags: selectedBlog.tags,
         });
         router.replace(`/?draft=${draftId}`);
-      }
-    } else if (currentDraftId) {
-      // Normal draft editing
-      handleContentChange(markdown);
+      }, 0);
     }
-  }, [selectedBlog, currentDraftId, createDraftFromBlog, router, handleContentChange]);
+  }, [selectedBlog, createDraftFromBlog, router]);
+
+  // Normalize content for comparison - aggressively strip formatting differences
+  const normalizeForComparison = (content: string) => {
+    return content
+      // Normalize whitespace and line endings
+      .replace(/\r\n/g, '\n')
+      .replace(/\u00A0/g, ' ')
+      .replace(/&#160;/g, ' ')
+      .replace(/[ \t]+/g, ' ')        // Collapse multiple spaces to one
+      .replace(/\n{2,}/g, '\n')       // Collapse multiple newlines to one
+      // Strip all escape characters
+      .replace(/\\([_*.\[\]()#`~>+-])/g, '$1')
+      // Strip formatting markers (bold, italic)
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/_([^_]+)_/g, '$1')
+      // Strip blockquote markers
+      .replace(/^>+ ?/gm, '')
+      // Strip heading markers
+      .replace(/^#{1,6} /gm, '')
+      // Strip list markers
+      .replace(/^[-*+] /gm, '')
+      .replace(/^\d+\. /gm, '')
+      // Clean up
+      .replace(/\n+/g, '\n')          // Collapse newlines again after stripping
+      .trim();
+  };
+
+  // Check if blog has been edited and create draft if so
+  const checkBlogForEdits = useCallback(() => {
+    if (!selectedBlog || !hasUserTyped.current) return;
+    if (!editorRef.current) return;
+
+    const markdown = editorRef.current?.getMarkdown() ?? '';
+    const normalizedOriginal = normalizeForComparison(selectedBlog.content);
+    const normalizedEditor = normalizeForComparison(markdown);
+
+    if (normalizedEditor !== normalizedOriginal) {
+      // DEBUG: Keep these logs to diagnose unexpected draft creation - DO NOT REMOVE
+      console.group('Draft created from blog view');
+      console.log('Blog title:', selectedBlog.title);
+      console.log('Original length:', selectedBlog.content.length, '| Normalized:', normalizedOriginal.length);
+      console.log('Editor length:', markdown.length, '| Normalized:', normalizedEditor.length);
+      console.log('--- Normalized original ---');
+      console.log(JSON.stringify(normalizedOriginal));
+      console.log('--- Normalized editor ---');
+      console.log(JSON.stringify(normalizedEditor));
+      // Find first difference
+      for (let i = 0; i < Math.max(normalizedOriginal.length, normalizedEditor.length); i++) {
+        if (normalizedOriginal[i] !== normalizedEditor[i]) {
+          console.log(`First difference at index ${i}:`);
+          console.log(`  Original char: ${JSON.stringify(normalizedOriginal[i])} (code: ${normalizedOriginal.charCodeAt(i)})`);
+          console.log(`  Editor char: ${JSON.stringify(normalizedEditor[i])} (code: ${normalizedEditor.charCodeAt(i)})`);
+          console.log(`  Context original: ${JSON.stringify(normalizedOriginal.slice(Math.max(0, i - 20), i + 20))}`);
+          console.log(`  Context editor: ${JSON.stringify(normalizedEditor.slice(Math.max(0, i - 20), i + 20))}`);
+          break;
+        }
+      }
+      console.groupEnd();
+
+      const draftId = createDraftFromBlog(markdown, {
+        pubkey: selectedBlog.pubkey,
+        dTag: selectedBlog.dTag,
+        title: selectedBlog.title,
+        summary: selectedBlog.summary,
+        image: selectedBlog.image,
+        tags: selectedBlog.tags,
+      });
+      router.replace(`/?draft=${draftId}`);
+    }
+  }, [selectedBlog, createDraftFromBlog, router]);
+
+  // Keep ref updated so navigation handlers can call it
+  useEffect(() => {
+    checkBlogForEditsRef.current = checkBlogForEdits;
+  }, [checkBlogForEdits]);
+
+  // Handle editor changes - only for draft autosave
+  const handleEditorChange = useCallback(() => {
+    // For blogs: handled by keydown, not onChange
+    if (selectedBlog) return;
+
+    // For drafts: debounce the expensive getMarkdown call
+    if (currentDraftId) {
+      if (draftSaveTimeoutRef.current) {
+        clearTimeout(draftSaveTimeoutRef.current);
+      }
+      draftSaveTimeoutRef.current = setTimeout(() => {
+        const markdown = editorRef.current?.getMarkdown() ?? '';
+        handleContentChange(markdown);
+      }, 300);
+    }
+  }, [selectedBlog, currentDraftId, handleContentChange]);
 
   return (
     <SidebarProvider defaultOpen={true}>
@@ -306,7 +379,10 @@ function HomeContent() {
               Loading...
             </div>
           ) : (
-          <div className="min-h-full w-full max-w-3xl mx-auto flex flex-col">
+          <div
+            className="min-h-full w-full max-w-3xl mx-auto flex flex-col"
+            onKeyDown={handleEditorKeyDown}
+          >
             <NostrEditor
               ref={editorRef}
               key={editorKey}
