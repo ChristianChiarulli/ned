@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { XIcon, MoreVerticalIcon } from 'lucide-react';
+import { XIcon, MoreVerticalIcon, PenLineIcon } from 'lucide-react';
 import { fetchBlogs } from '@/lib/nostr/fetch';
 import { deleteArticle } from '@/lib/nostr/publish';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { useSettingsStore } from '@/lib/stores/settingsStore';
+import { useDraftStore } from '@/lib/stores/draftStore';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -39,6 +40,7 @@ export default function BlogListPanel({ onSelectBlog, onClose }: BlogListPanelPr
   const pubkey = useAuthStore((state) => state.pubkey);
   const relays = useSettingsStore((state) => state.relays);
   const queryClient = useQueryClient();
+  const findDraftByLinkedBlog = useDraftStore((state) => state.findDraftByLinkedBlog);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -121,15 +123,25 @@ export default function BlogListPanel({ onSelectBlog, onClose }: BlogListPanelPr
         )}
 
         <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
-          {blogs.map((blog) => (
+          {blogs.map((blog) => {
+            const hasDraftEdit = !!findDraftByLinkedBlog(blog.pubkey, blog.dTag);
+            return (
             <li key={blog.id} className="relative group">
               <button
                 onClick={() => onSelectBlog?.(blog)}
                 className="w-full text-left p-3 pr-10 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
               >
-                <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                  {blog.title}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                    {blog.title}
+                  </h3>
+                  {hasDraftEdit && (
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded" title="Has unpublished edits">
+                      <PenLineIcon className="w-3 h-3" />
+                      Editing
+                    </span>
+                  )}
+                </div>
                 {blog.summary && (
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
                     {blog.summary}
@@ -164,7 +176,8 @@ export default function BlogListPanel({ onSelectBlog, onClose }: BlogListPanelPr
                 </DropdownMenu>
               </div>
             </li>
-          ))}
+          );
+          })}
         </ul>
 
         {/* Load More Button */}

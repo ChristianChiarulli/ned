@@ -176,9 +176,10 @@ function HomeContent() {
 
   // Determine editor content and key
   const editorContent = selectedBlog ? selectedBlog.content : (draft?.content ?? '');
-  // Use linked blog info as key if available to prevent remount when transitioning from blog to draft
+  // Use consistent key format based on blog identity (pubkey:dTag) to prevent remount when transitioning from blog to draft
+  const blogIdentityKey = selectedBlog ? `${selectedBlog.pubkey}:${selectedBlog.dTag}` : null;
   const linkedBlogKey = draft?.linkedBlog ? `${draft.linkedBlog.pubkey}:${draft.linkedBlog.dTag}` : null;
-  const editorKey = linkedBlogKey || selectedBlog?.id || currentDraftId || 'new';
+  const editorKey = blogIdentityKey || linkedBlogKey || currentDraftId || 'new';
 
   // Handle first edit on a blog - create draft and redirect
   const handleEditorChange = useCallback(() => {

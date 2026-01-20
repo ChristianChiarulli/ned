@@ -46,8 +46,9 @@ export default function DraftsPanel({ onSelectDraft, onClose }: DraftsPanelProps
   }, []);
 
   // Convert drafts object to sorted array (most recent first)
+  // Keep linked drafts (edits to published blogs) even if empty
   const draftsList: Draft[] = Object.values(drafts)
-    .filter((draft) => draft.content.trim().length > 0)
+    .filter((draft) => draft.content.trim().length > 0 || draft.linkedBlog)
     .sort((a, b) => b.lastSaved - a.lastSaved);
 
   const hasDrafts = isHydrated && draftsList.length > 0;
