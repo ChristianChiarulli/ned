@@ -100,7 +100,7 @@ function EditorInner({
       }
       let markdown = '';
       editor.getEditorState().read(() => {
-        markdown = $convertToMarkdownString(ALL_TRANSFORMERS, undefined, true);
+        markdown = $convertToMarkdownString(ALL_TRANSFORMERS, undefined, false);
       });
       return markdown;
     },
@@ -110,13 +110,13 @@ function EditorInner({
     if (isRawMode) {
       // Switching from raw to rich: parse markdown into editor
       editor.update(() => {
-        $convertFromMarkdownString(rawMarkdown, ALL_TRANSFORMERS, undefined, true);
+        $convertFromMarkdownString(rawMarkdown, ALL_TRANSFORMERS, undefined, false);
       });
       setIsRawMode(false);
     } else {
       // Switching from rich to raw: get markdown from editor
       editor.getEditorState().read(() => {
-        const markdown = $convertToMarkdownString(ALL_TRANSFORMERS, undefined, true);
+        const markdown = $convertToMarkdownString(ALL_TRANSFORMERS, undefined, false);
         setRawMarkdown(markdown);
       });
       setIsRawMode(true);
@@ -138,7 +138,7 @@ function EditorInner({
     // Update editor state in background so onChange fires
     if (onChange) {
       editor.update(() => {
-        $convertFromMarkdownString(newMarkdown, ALL_TRANSFORMERS, undefined, true);
+        $convertFromMarkdownString(newMarkdown, ALL_TRANSFORMERS, undefined, false);
       });
     }
   }, [editor, onChange]);
@@ -156,10 +156,10 @@ function EditorInner({
           />
         ) : (
           <ContentEditable
-            className="min-h-full flex-auto px-4 py-8 pb-[30%] outline-none text-zinc-900 dark:text-zinc-100"
+            className="min-h-full flex-auto px-4 py-8 pb-[30%] outline-none text-zinc-900 dark:text-zinc-100 font-[family-name:var(--font-source-serif-4)] text-lg leading-relaxed"
             aria-placeholder={placeholder}
             placeholder={
-              <div className="absolute top-8 left-4 text-zinc-400 dark:text-zinc-500 pointer-events-none select-none">
+              <div className="absolute top-8 left-4 text-zinc-400 dark:text-zinc-500 pointer-events-none select-none font-[family-name:var(--font-source-serif-4)]">
                 {placeholder}
               </div>
             }
